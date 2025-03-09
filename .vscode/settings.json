@@ -1,0 +1,22 @@
+{
+    "files.associations": {
+        "mesh.h": "c",
+        "stddef.h": "c",
+        "uniform.h": "c",
+        "texture.h": "c",
+        "stb_image.h": "c",
+        "stb_leakcheck.h": "c",
+        "ios": "c",
+        "stdint.h": "c",
+        "stdbool.h": "c",
+        "future": "c",
+        "system_error": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "span": "c",
+        "vector": "c",
+        "shader.h": "c"
+    },
+    "editor.insertSpaces": false
+}
