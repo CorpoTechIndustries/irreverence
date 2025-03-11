@@ -1,0 +1,123 @@
+#include <platform/io.h>
+
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+
+#include <unistd.h>
+#include <sys/fcntl.h>
+#include <sys/file.h>
+#include <sys/syscall.h>
+#include <sys/stat.h>
+
+#define STDOUT 0
+#define STDIN 1
+#define STDERR 2
+
+void Sys_Print(const char* str)
+{
+	Sys_FilePrint(STDOUT, str);
+}
+
+#define FORMAT_BUFFER_SIZE 30000
+
+static char format_buffer[FORMAT_BUFFER_SIZE];
+
+void Sys_Printf(const char* fmt, ...)
+{
+	va_list l;
+
+	va_start(l, fmt);
+
+	vsnprintf(format_buffer, FORMAT_BUFFER_SIZE, fmt, l);
+	Sys_Print(format_buffer);
+
+	va_end(l);
+}
+
+void Sys_VPrintf(const char* fmt, va_list args)
+{
+	vsnprintf(format_buffer, FORMAT_BUFFER_SIZE, fmt, args);
+	Sys_Print(format_buffer);
+}
+
+file_t Sys_FileOpen(const char* path, enum file_mode_t mode)
+{
+	int flags = 0;
+
+	if (mode & FILE_MODE_CREATE) {
+		flags |= O_CREAT;
+	}
+
+	if (mode & FILE_MODE_TRUNC) {
+		flags |= O_TRUNC;
+	}
+
+	if (mode & FILE_MODE_APPEND) {
+		flags |= O_APPEND;
+	}
+
+	int rd = mode & FILE_MODE_READ;
+	int wr = mode & FILE_MODE_WRITE;
+
+	if (rd && wr) {
+		flags |= O_RDWR;
+	} else if (rd) {
+		flags |= O_RDONLY;
+	} else if (wr) {
+		flags |= O_WRONLY;
+	}
+
+	return open(path, flags, S_IRUSR | S_IWUSR);
+}
+
+void Sys_FileClose(file_t file)
+{
+	close(file);
+}
+
+size_t Sys_FileSeek(file_t file, enum file_seek_t seek, size_t pos)
+{
+	lseek(file, pos, seek);
+}
+
+size_t Sys_FileTell(file_t file)
+{
+	return Sys_FileSeek(file, FILE_SEEK_CUR, 0);
+}
+
+size_t Sys_FileRead(file_t file, void* buff, size_t buff_size)
+{
+	return read(file, buff, buff_size);
+}
+
+size_t Sys_FileWrite(file_t file, const void* buff, size_t buff_size)
+{
+	return write(file, buff, buff_size);
+}
+
+size_t Sys_FilePrint(file_t file, const char* str)
+{
+	size_t len = strlen(str);
+
+	return Sys_FileWrite(file, str, len);
+}
+
+size_t Sys_FilePrintf(file_t file, const char* fmt, ...)
+{
+	va_list l;
+
+	va_start(l, fmt);
+	vsnprintf(format_buffer, FORMAT_BUFFER_SIZE, fmt, l);
+	size_t i = Sys_FilePrint(file, format_buffer);
+	va_end(l);
+
+	return i;
+}
+
+size_t Sys_FileVPrintf(file_t file, const char* fmt, va_list args)
+{
+	vsnprintf(format_buffer, FORMAT_BUFFER_SIZE, fmt, args);
+
+	return Sys_FilePrint(file, format_buffer);
+}

@@ -1,4 +1,5 @@
 #include <engine/renderer/texture.h>
+#include <engine/log.h>
 
 #include <math.h>
 
@@ -61,9 +62,9 @@ void Texture_InitFromImage(texture_t* texture, const char* image_path, bool line
 
 	int width = 0, height = 0, channels = 0;
 	unsigned char* data = stbi_load(image_path, &width, &height, &channels, 0);
-	
+
 	if (!data) {
-		printf("Failed to create texture from image \"%s\", reason: %s\n", image_path, stbi_failure_reason());
+		LOG_ERROR("Failed to create texture from image \"%s\", reason: %s", image_path, stbi_failure_reason());
 		return;
 	}
 

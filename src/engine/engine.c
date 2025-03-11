@@ -8,9 +8,14 @@
 #include <engine/renderer/shader.h>
 #include <engine/renderer/mesh.h>
 #include <engine/renderer/texture.h>
+#include <engine/log.h>
+
+#include <platform/sys.h>
 
 int Engine_Run(int argc, const char** argv)
 {
+	Sys_Init();
+
 	if (!glfwInit()) {
 		return EXIT_FAILURE;
 	}
@@ -77,6 +82,8 @@ int Engine_Run(int argc, const char** argv)
 	Texture_Destroy(&testTexture);
 
 	glfwDestroyWindow(window);
+
+	Sys_Close();
 
 	return EXIT_SUCCESS;
 }

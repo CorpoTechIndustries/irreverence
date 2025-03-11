@@ -12,4 +12,5 @@ target_link_libraries(engine PRIVATE
 	${GLEW_STATIC_LIBRARIES}
 	${GLFW_STATIC_LIBRARIES}
 	math
+	platform
 )
