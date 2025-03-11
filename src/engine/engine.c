@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <engine/renderer/renderer.h>
 #include <engine/renderer/shader.h>
 #include <engine/renderer/mesh.h>
 #include <engine/renderer/texture.h>
@@ -61,9 +62,7 @@ int Engine_Run(int argc, const char** argv)
 
 	glfwMakeContextCurrent(window);
 
-	GLenum res = glewInit();
-
-	if (res != GLEW_OK) {
+	if (!R_Init()) {
 		return EXIT_FAILURE;
 	}
 
@@ -82,7 +81,7 @@ int Engine_Run(int argc, const char** argv)
 		.g = 0.7f,
 		.b = 0.7f,
 		.a = 1.0f,
-		.model = { 1.0f }
+		.model = MAT4_IDENTITY
 	};
 
 	shader_t testShader;
@@ -91,8 +90,6 @@ int Engine_Run(int argc, const char** argv)
 	texture_t testTexture;
 	Texture_InitFromImage(&testTexture, "assets/textures/scateleton.png", true, false);
 
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-
 	IN_Init();
 
 	while (!glfwWindowShouldClose(window)) {
@@ -100,10 +97,10 @@ int Engine_Run(int argc, const char** argv)
 
 		glfwPollEvents();
 
-		glClear(GL_COLOR_BUFFER_BIT);
+		R_Present();
 
 		Shader_Bind(&testShader);
-		Texture_Bind(&testTexture, 0);
+		Texture_Bind(R_GetMissingTexture(), 0);
 		Mesh_DrawModel(&triMesh, &triInstance);
 
 		glfwSwapBuffers(window);
@@ -112,6 +109,8 @@ int Engine_Run(int argc, const char** argv)
 	Mesh_Destroy(&triMesh);
 	Shader_Destroy(&testShader);
 	Texture_Destroy(&testTexture);
+
+	R_Destroy();
 
 	glfwDestroyWindow(window);
 

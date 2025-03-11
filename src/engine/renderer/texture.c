@@ -6,13 +6,13 @@
 #include <engine/stb_image.h>
 #include <GL/glew.h>
 
-void Texture_InitFromMemory(texture_t* texture, const char* data, uint32_t width, uint32_t height, uint8_t channel_count, bool linearize, bool gen_mipmaps)
+void Texture_InitFromMemory(texture_t* texture, const uint8_t* data, uint32_t width, uint32_t height, uint8_t channel_count, bool linearize, bool gen_mipmaps)
 {
 	uint32_t id = 0;
 	glCreateTextures(GL_TEXTURE_2D, 1, &id);
 
-	glTexParameteri(id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	GLenum glFormat = GL_RGBA8;
 	GLenum glFormatAlt = GL_RGBA;

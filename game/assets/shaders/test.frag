@@ -2,6 +2,16 @@
 
 out vec4 FRAG_COLOR;
 
+layout(std140, binding = 0) uniform GlobalUniform
+{
+    uint Width;
+	uint Height;
+	float CurTime;
+	float FrameTime;
+	mat4 ViewMat;
+	mat4 ProjectionMat;
+} uGlobal;
+
 in VP_Shared {
 	vec3 pFragPos;
     vec3 pNormal;
