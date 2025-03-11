@@ -13,4 +13,5 @@ target_link_libraries(engine PRIVATE
 	${GLFW_STATIC_LIBRARIES}
 	math
 	platform
+	util
 )

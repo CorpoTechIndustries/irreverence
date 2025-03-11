@@ -9,8 +9,32 @@
 #include <engine/renderer/mesh.h>
 #include <engine/renderer/texture.h>
 #include <engine/log.h>
+#include <engine/input.h>
 
 #include <platform/sys.h>
+
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if (action == GLFW_REPEAT) {
+		return;
+	}
+
+	IN_KeyEvent(key, action == GLFW_PRESS);
+}
+
+static void button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (action == GLFW_REPEAT) {
+		return;
+	}
+
+	IN_MouseEvent(button, action == GLFW_PRESS);
+}
+
+static void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	IN_MotionEvent((float)xpos, (float)ypos);
+}
 
 int Engine_Run(int argc, const char** argv)
 {
@@ -30,6 +54,10 @@ int Engine_Run(int argc, const char** argv)
 	if (!window) {
 		return EXIT_FAILURE;
 	}
+
+	glfwSetKeyCallback(window, key_callback);
+	glfwSetMouseButtonCallback(window, button_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
 
 	glfwMakeContextCurrent(window);
 
@@ -65,7 +93,11 @@ int Engine_Run(int argc, const char** argv)
 
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
+	IN_Init();
+
 	while (!glfwWindowShouldClose(window)) {
+		IN_Update();
+
 		glfwPollEvents();
 
 		glClear(GL_COLOR_BUFFER_BIT);
