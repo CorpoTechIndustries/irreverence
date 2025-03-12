@@ -118,10 +118,16 @@ void R_Destroy()
 	Texture_Destroy(&s_BlackTexture);
 }
 
+void R_WindowUpdate(int width, int height)
+{
+	s_GlobalData.width = width;
+	s_GlobalData.height = height;
+
+	glViewport(0, 0, width, height);
+}
+
 void R_Present()
 {
-	s_GlobalData.width = 1280;
-	s_GlobalData.height = 720;
 	s_GlobalData.curtime = 0.0f;
 	s_GlobalData.frametime = 0.0f;
 

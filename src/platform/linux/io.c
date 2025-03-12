@@ -121,3 +121,73 @@ size_t Sys_FileVPrintf(file_t file, const char* fmt, va_list args)
 
 	return Sys_FilePrint(file, format_buffer);
 }
+
+uint8_t Sys_FileReadUInt8(file_t file)
+{
+	uint8_t v;
+
+	Sys_FileRead(file, &v, sizeof(v));
+
+	return v;
+}
+
+uint16_t Sys_FileReadUInt16(file_t file)
+{
+	uint16_t v;
+
+	Sys_FileRead(file, &v, sizeof(v));
+
+	return v;
+}
+
+uint32_t Sys_FileReadUInt32(file_t file)
+{
+	uint32_t v;
+
+	Sys_FileRead(file, &v, sizeof(v));
+
+	return v;
+}
+
+uint64_t Sys_FileReadUInt64(file_t file)
+{
+	uint64_t v;
+
+	Sys_FileRead(file, &v, sizeof(v));
+
+	return v;
+}
+
+float Sys_FileReadFloat(file_t file)
+{
+	float v;
+
+	Sys_FileRead(file, &v, sizeof(v));
+
+	return v;
+}
+
+void Sys_FileWriteUInt8(file_t file, uint8_t value)
+{
+	Sys_FileWrite(file, &value, sizeof(value));
+}
+
+void Sys_FileWriteUInt16(file_t file, uint16_t value)
+{
+	Sys_FileWrite(file, &value, sizeof(value));
+}
+
+void Sys_FileWriteUInt32(file_t file, uint32_t value)
+{
+	Sys_FileWrite(file, &value, sizeof(value));
+}
+
+void Sys_FileWriteUInt64(file_t file, uint64_t value)
+{
+	Sys_FileWrite(file, &value, sizeof(value));
+}
+
+void Sys_FileWriteFloat(file_t file, float value)
+{
+	Sys_FileWrite(file, &value, sizeof(value));
+}

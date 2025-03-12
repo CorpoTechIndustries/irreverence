@@ -37,6 +37,11 @@ static void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	IN_MotionEvent((float)xpos, (float)ypos);
 }
 
+static void resize_callback(GLFWwindow* window, int width, int height)
+{
+	R_WindowUpdate(width, height);
+}
+
 int Engine_Run(int argc, const char** argv)
 {
 	Sys_Init();
@@ -59,6 +64,7 @@ int Engine_Run(int argc, const char** argv)
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetMouseButtonCallback(window, button_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetWindowSizeCallback(window, resize_callback);
 
 	glfwMakeContextCurrent(window);
 

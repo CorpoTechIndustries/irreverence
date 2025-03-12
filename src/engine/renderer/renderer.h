@@ -6,6 +6,7 @@
 
 bool R_Init();
 void R_Destroy();
+void R_WindowUpdate(int width, int height);
 
 void R_Present();
 
