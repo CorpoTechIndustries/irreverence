@@ -3,6 +3,8 @@
 
 #include <platform/memory.h>
 
+#include <string.h>
+
 void Material_Init(material_t* material, const char* name, texture_t** textures, uint8_t texture_count, material_flags_t flags)
 {
 	strncpy(material->name, name, MAX_MATERIAL_NAME_LENGTH);
