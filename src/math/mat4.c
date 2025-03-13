@@ -26,7 +26,7 @@ void Mat4_Scale(mat4_t* mat, vec3_t scale)
 
 void Mat4_Rotate(mat4_t* mat, float angle, vec3_t axis)
 {
-	glm_rotate((GLM_MAT)mat, angle, axis.v);
+	glm_rotate((GLM_MAT)mat, glm_rad(angle), axis.v);
 }
 
 void Mat4_Ortho(float left, float right, float bottom, float top, float nearZ, float farZ, mat4_t* dest)
@@ -36,7 +36,7 @@ void Mat4_Ortho(float left, float right, float bottom, float top, float nearZ, f
 
 void Mat4_Perspective(float fov, float aspect, float nearZ, float farZ, mat4_t* dest)
 {
-	glm_perspective(fov, aspect, nearZ, farZ, (GLM_MAT)dest);
+	glm_perspective(glm_rad(fov), aspect, nearZ, farZ, (GLM_MAT)dest);
 }
 
 void Mat4_LookAt(vec3_t eye, vec3_t center, vec3_t up, mat4_t* dest)

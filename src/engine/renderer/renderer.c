@@ -1,8 +1,8 @@
 #include <engine/renderer/renderer.h>
 
 #include <engine/renderer/uniform.h>
-#include <engine/renderer/texture.h>
 #include <engine/log.h>
+#include <engine/input.h>
 
 #include <math/mat4.h>
 
@@ -12,6 +12,7 @@
 #include <math.h>
 
 #include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 static void glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
 {
@@ -45,16 +46,18 @@ static void glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 
 	switch (severity) {
 	case GL_DEBUG_SEVERITY_LOW:
-		LOG_INFO("GL Message %i, Source %s, Type %s:: %s\n", id, sourceStr, typeStr, message);
+		LOG_INFO("GL Message %i, Source %s, Type %s:: %s", id, sourceStr, typeStr, message);
 		break;
 	case GL_DEBUG_SEVERITY_MEDIUM:
-		LOG_WARNING("GL Message %i, Source %s, Type %s:: %s\n", id, sourceStr, typeStr, message);
+		LOG_WARNING("GL Message %i, Source %s, Type %s:: %s", id, sourceStr, typeStr, message);
 		break;
 	case GL_DEBUG_SEVERITY_HIGH:
-		LOG_ERROR("GL Message %i, Source %s, Type %s:: %s\n", id, sourceStr, typeStr, message);
+		LOG_ERROR("GL Message %i, Source %s, Type %s:: %s", id, sourceStr, typeStr, message);
 		break;
 	}
 }
+
+view_t g_View;
 
 static uniform_t s_GlobalUniform;
 static struct {
@@ -70,16 +73,37 @@ static texture_t s_MissingTexture;
 static texture_t s_WhiteTexture;
 static texture_t s_BlackTexture;
 
+static mesh_t s_CubeMesh;
+
 bool R_Init()
 {
+	// Init OpenGL
+
 	GLenum res = glewInit();
 	if (res != GLEW_OK) {
-		LOG_FATAL("Failed to init GLEW: %s\n", glewGetErrorString(res));
+		LOG_FATAL("Failed to init GLEW: %s", glewGetErrorString(res));
 		return false;
 	}
 
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(glMessageCallback, NULL);
+
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);
+
+	// Init Objects
+	
+	g_View = (view_t) {
+		.position = NEW_VEC3(0.0f, 0.0f, 1.0f),
+		.direction = NEW_VEC3(0.0f, 0.0f, -1.0f),
+		.up = NEW_VEC3(0.0f, 1.0f, 0.0f),
+		.fov = 70.0f,
+		.nearZ = 0.2f,
+		.farZ = 1000.0f
+	};
 
 	Uniform_Init(&s_GlobalUniform, 0, NULL, sizeof(s_GlobalData));
 
@@ -106,6 +130,35 @@ bool R_Init()
 	Texture_InitFromMemory(&s_BlackTexture, (const uint8_t*)&missingColor1, 1, 1, 3, false, false);
 	Texture_InitFromMemory(&s_WhiteTexture, (const uint8_t*)&whiteColor, 1, 1, 3, false, false);
 
+	const mesh_modelvertex_t cubeVertices[] = {
+		{ -1.0f, 1.0f, -1.0f,		0.0f, 1.0f, 0.0f,		1.0f, 1.0f}, 
+		{ 1.0f, 1.0f, 1.0f,			0.0f, 1.0f, 0.0f,		0.0f, 0.0f}, 
+		{ 1.0f, 1.0f, -1.0f,		0.0f, 1.0f, 0.0f,		0.0f, 1.0f}, 
+		{ 1.0f, 1.0f, 1.0f,			0.0f, 0.0f, 1.0f,		1.0f, 1.0f}, 
+		{ -1.0f, -1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		0.0f, 0.0f}, 
+		{ 1.0f, -1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		0.0f, 1.0f}, 
+		{ -1.0f, 1.0f, 1.0f,		-1.0f, 0.0f, 0.0f,		1.0f, 1.0f}, 
+		{ -1.0f, -1.0f, -1.0f,		-1.0f, 0.0f, 0.0f,		0.0f, 0.0f}, 
+		{ -1.0f, -1.0f, 1.0f,		-1.0f, 0.0f, 0.0f,		0.0f, 1.0f}, 
+		{ 1.0f, -1.0f, -1.0f,		0.0f, -1.0f, 0.0f,		1.0f, 1.0f}, 
+		{ -1.0f, -1.0f, 1.0f,		0.0f, -1.0f, 0.0f,		0.0f, 0.0f}, 
+		{ -1.0f, -1.0f, -1.0f,		0.0f, -1.0f, 0.0f,		0.0f, 1.0f}, 
+		{ 1.0f, 1.0f, -1.0f,		1.0f, 0.0f, 0.0f,		1.0f, 1.0f}, 
+		{ 1.0f, -1.0f, 1.0f,		1.0f, 0.0f, 0.0f,		0.0f, 0.0f}, 
+		{ 1.0f, -1.0f, -1.0f,		1.0f, 0.0f, 0.0f,		0.0f, 1.0f}, 
+		{ -1.0f, 1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		1.0f, 1.0f}, 
+		{ 1.0f, -1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		0.0f, 0.0f}, 
+		{ -1.0f, -1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		0.0f, 1.0f}, 
+		{ -1.0f, 1.0f, 1.0f,		0.0f, 1.0f, 0.0f,		1.0f, 0.0f}, 
+		{ -1.0f, 1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		1.0f, 0.0f}, 
+		{ -1.0f, 1.0f, -1.0f,		-1.0f, 0.0f, 0.0f,		1.0f, 0.0f}, 
+		{ 1.0f, -1.0f, 1.0f,		0.0f, -1.0f, 0.0f,		1.0f, 0.0f}, 
+		{ 1.0f, 1.0f, 1.0f,			1.0f, 0.0f, 0.0f,		1.0f, 0.0f}, 
+		{ 1.0f, 1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		1.0f, 0.0f}
+	};
+	const uint32_t cubeIndices[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 0, 18, 1, 3, 19, 4, 6, 20, 7, 9, 21, 10, 12, 22, 13, 15, 23, 16 };
+	Mesh_InitModel(&s_CubeMesh, cubeVertices, 24, cubeIndices, 36);
+
 	return true;
 }
 
@@ -116,6 +169,8 @@ void R_Destroy()
 	Texture_Destroy(&s_MissingTexture);
 	Texture_Destroy(&s_WhiteTexture);
 	Texture_Destroy(&s_BlackTexture);
+
+	Mesh_Destroy(&s_CubeMesh);
 }
 
 void R_WindowUpdate(int width, int height)
@@ -126,18 +181,71 @@ void R_WindowUpdate(int width, int height)
 	glViewport(0, 0, width, height);
 }
 
+void R_DebugMoveUpdate()
+{
+	vec3_t side = VEC3_ZERO;
+	Vec3_Cross(g_View.direction, g_View.up, &side);
+	Vec3_Normalize(side, &side);
+
+	if (IN_IsKeyDown(GLFW_KEY_UP)) {
+		Vec3_Rotate(1.0f, side, &g_View.direction);
+	}
+
+	if (IN_IsKeyDown(GLFW_KEY_DOWN)) {
+		Vec3_Rotate(-1.0f, side, &g_View.direction);
+	}
+
+	if (IN_IsKeyDown(GLFW_KEY_LEFT)) {
+		Vec3_Rotate(1.0f, NEW_VEC3(0.0f, 1.0f, 0.0f), &g_View.direction);
+	}
+
+	if (IN_IsKeyDown(GLFW_KEY_RIGHT)) {
+		Vec3_Rotate(-1.0f, NEW_VEC3(0.0f, 1.0f, 0.0f), &g_View.direction);
+	}
+
+	Vec3_Cross(g_View.direction, g_View.up, &side);
+	Vec3_Normalize(side, &side);
+	
+	if (IN_IsKeyDown(GLFW_KEY_W)) {
+		Vec3_AddTo(g_View.position, Vec3_Mul(g_View.direction, NEW_VEC3S(0.01f)), &g_View.position);
+	}
+
+	if (IN_IsKeyDown(GLFW_KEY_S)) {
+		Vec3_SubTo(g_View.position, Vec3_Mul(g_View.direction, NEW_VEC3S(0.01f)), &g_View.position);
+	}
+
+	if (IN_IsKeyDown(GLFW_KEY_A)) {
+		Vec3_SubTo(g_View.position, Vec3_Mul(side, NEW_VEC3S(0.01f)), &g_View.position);
+	}
+
+	if (IN_IsKeyDown(GLFW_KEY_D)) {
+		Vec3_AddTo(g_View.position, Vec3_Mul(side, NEW_VEC3S(0.01f)), &g_View.position);
+	}
+
+	if (IN_IsKeyDown(GLFW_KEY_SPACE)) {
+		g_View.position.y += 0.01f;
+	}
+
+	if (IN_IsKeyDown(GLFW_KEY_LEFT_CONTROL)) {
+		g_View.position.y -= 0.01f;
+	}
+}
+
 void R_Present()
 {
 	s_GlobalData.curtime = 0.0f;
 	s_GlobalData.frametime = 0.0f;
 
-	s_GlobalData.view = MAT4_IDENTITY;
-	s_GlobalData.projection = MAT4_IDENTITY;
+	float aspect = (float)s_GlobalData.width / (float)s_GlobalData.height;
+	Mat4_LookAt(g_View.position, Vec3_Add(g_View.position, g_View.direction), g_View.up, &s_GlobalData.view);
+	Mat4_Perspective(g_View.fov, aspect, g_View.nearZ, g_View.farZ, &s_GlobalData.projection);
 
 	Uniform_Update(&s_GlobalUniform, &s_GlobalData, sizeof(s_GlobalData), 0);
+}
 
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+ivec2_t R_GetWindowSize()
+{
+	return NEW_IVEC2(s_GlobalData.width, s_GlobalData.height);
 }
 
 texture_t* R_GetMissingTexture()
@@ -153,4 +261,9 @@ texture_t* R_GetWhiteTexture()
 texture_t* R_GetBlackTexture()
 {
 	return &s_BlackTexture;
+}
+
+mesh_t* R_GetCubeMesh()
+{
+	return &s_CubeMesh;
 }

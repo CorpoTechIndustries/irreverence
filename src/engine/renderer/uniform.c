@@ -4,7 +4,6 @@
 
 void Uniform_Init(uniform_t* uniform, uint8_t location, void* data, size_t size)
 {
-	uniform->id = 0;
 	uniform->location = location;
 	uniform->currentSize = size;
 

@@ -20,11 +20,40 @@ static bool ReadShaderFile(const char* path, char** out_buffer, size_t* out_size
 	return true;
 }
 
-bool Shader_Init(shader_t* shader, const char* name, const char* vertex_path, const char* pixel_path)
+bool Shader_InitRaster(shader_t* shader, const char* name, const char* vertex_path, const char* pixel_path)
 {
-	shader->programId = 0;
-
 	if (!vertex_path || !pixel_path) return false;
+
+	strncpy(shader->name, name, MAX_SHADER_NAME_LENGTH);
+	
+	char* vertexCode = NULL;
+	size_t vertexCodeSize = 0;
+	if (!ReadShaderFile(vertex_path, &vertexCode, &vertexCodeSize)) {
+		LOG_ERROR("Failed to load Vertex code from path \"%s\"", vertex_path);
+		return false;
+	}
+	
+	char* pixelCode = NULL;
+	size_t pixelCodeSize = 0;
+	if (!ReadShaderFile(pixel_path, &pixelCode, &pixelCodeSize)) {
+		LOG_ERROR("Failed to load Pixel code from path \"%s\"", pixel_path);
+		free(vertexCode);
+		return false;
+	}
+	
+	bool res = Shader_InitRasterFromMemory(shader, vertexCode, pixelCode);
+
+	free(vertexCode);
+	free(pixelCode);
+
+	return res;
+}
+
+bool Shader_InitRasterFromMemory(shader_t* shader, const char* vertex_code, const char* pixel_code)
+{
+	shader->id = 0;
+
+	if (!vertex_code || !pixel_code) return false;
 
 	char failureLog[1024];
 	int bSuccess = true;
@@ -32,21 +61,11 @@ bool Shader_Init(shader_t* shader, const char* name, const char* vertex_path, co
 	unsigned int v_id = 0;
 	unsigned int p_id = 0;
 
-	strncpy(shader->name, name, MAX_SHADER_NAME);
-	char* vertexCode = NULL;
-	size_t vertexCodeSize = 0;
-	if (!ReadShaderFile(vertex_path, &vertexCode, &vertexCodeSize)) {
-		LOG_ERROR("Failed to load Vertex code from path \"%s\"", vertex_path);
-		return false;
-	}
-
 	v_id = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(v_id, 1, (const GLchar* const*)&vertexCode, NULL);
+	glShaderSource(v_id, 1, (const GLchar* const*)&vertex_code, NULL);
 	glCompileShader(v_id);
 	glGetShaderiv(v_id, GL_COMPILE_STATUS, &bSuccess);
-
-	free(vertexCode);
-
+	
 	bool bFailedShaderCompilation = false;
 	if (!bSuccess) {
 		glGetShaderInfoLog(v_id, 1024, NULL, failureLog);
@@ -54,19 +73,10 @@ bool Shader_Init(shader_t* shader, const char* name, const char* vertex_path, co
 		bFailedShaderCompilation = true;
 	}
 
-	char* pixelCode = NULL;
-	size_t pixelCodeSize = 0;
-	if (!ReadShaderFile(pixel_path, &pixelCode, &pixelCodeSize)) {
-		LOG_ERROR("Failed to load Pixel code from path \"%s\"", pixel_path);
-		return false;
-	}
-
 	p_id = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(p_id, 1, (const GLchar* const*)&pixelCode, NULL);
+	glShaderSource(p_id, 1, (const GLchar* const*)&pixel_code, NULL);
 	glCompileShader(p_id);
 	glGetShaderiv(p_id, GL_COMPILE_STATUS, &bSuccess);
-
-	free(pixelCode);
 
 	if (!bSuccess) {
 		glGetShaderInfoLog(p_id, 1024, NULL, failureLog);
@@ -94,28 +104,101 @@ bool Shader_Init(shader_t* shader, const char* name, const char* vertex_path, co
 		glDeleteShader(p_id);
 
 		glDeleteProgram(id);
-		return 0;
+		return false;
 	}
 
 	glDeleteShader(v_id);
 	glDeleteShader(p_id);
 
-	shader->programId = id;
+	shader->id = id;
+
+	return true;
+}
+
+bool Shader_InitCompute(shader_t* shader, const char* name, const char* path)
+{
+	if (!path) return false;
+
+	strncpy(shader->name, name, MAX_SHADER_NAME_LENGTH);
+
+	char* computeCode = NULL;
+	size_t computeCodeSize = 0;
+	if (!ReadShaderFile(path, &computeCode, &computeCodeSize)) {
+		LOG_ERROR("Failed to load Compute code from path \"%s\"", path);
+		return false;
+	}
+
+	free(computeCode);
+	
+	return true;
+}
+
+bool Shader_InitComputeFromMemory(shader_t* shader, const char* code)
+{
+	shader->id = 0;
+
+	if (!code) return false;
+
+	char failureLog[1024];
+	int bSuccess = true;
+
+	unsigned int c_id = 0;
+
+	c_id = glCreateShader(GL_COMPUTE_SHADER);
+	glShaderSource(c_id, 1, (const GLchar* const*)&code, NULL);
+	glCompileShader(c_id);
+	glGetShaderiv(c_id, GL_COMPILE_STATUS, &bSuccess);
+	
+	if (!bSuccess) {
+		glGetShaderInfoLog(c_id, 1024, NULL, failureLog);
+		LOG_ERROR("Compute shader compilation failed:\n %s", failureLog);
+		glDeleteShader(c_id);
+		return false;
+	}
+
+	unsigned int id = glCreateProgram();
+	glAttachShader(id, c_id);
+	glLinkProgram(id);
+	glGetProgramiv(id, GL_LINK_STATUS, &bSuccess);
+
+	if (!bSuccess) {
+		// Linking failed.
+		glGetProgramInfoLog(id, 1024, NULL, failureLog);
+		LOG_ERROR("Shader Program Linking failed:\n %s", failureLog);
+		glDeleteShader(c_id);
+
+		glDeleteProgram(id);
+		return false;
+	}
+
+	glDeleteShader(c_id);
+
+	shader->id = id;
 
 	return true;
 }
 
 void Shader_Destroy(shader_t* shader)
 {
-	glDeleteProgram(shader->programId);
-	shader->programId = 0;
+	glDeleteProgram(shader->id);
+	shader->id = 0;
 }
 
 static uint32_t s_iBoundShader = 0;
 void Shader_Bind(shader_t* shader)
 {
-	if (s_iBoundShader == shader->programId) return;
-	s_iBoundShader = shader->programId;
+	if (s_iBoundShader == shader->id) return;
+	s_iBoundShader = shader->id;
 
-	glUseProgram(shader->programId);
+	glUseProgram(shader->id);
+}
+
+void Shader_Dispatch(shader_t* shader, vec3_t groups, uint32_t memory_barrier)
+{
+	Shader_Bind(shader);
+	glDispatchCompute(groups.x, groups.y, groups.z);
+	
+	if (memory_barrier != 0) {
+		glMemoryBarrier(memory_barrier);
+	}
 }

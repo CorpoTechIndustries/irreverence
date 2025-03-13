@@ -9,8 +9,10 @@
 #include <engine/renderer/shader.h>
 #include <engine/renderer/mesh.h>
 #include <engine/renderer/texture.h>
+#include <engine/renderer/framebuffer.h>
 #include <engine/log.h>
 #include <engine/input.h>
+#include <util/bitset.h>
 
 #include <platform/sys.h>
 
@@ -72,6 +74,8 @@ int Engine_Run(int argc, const char** argv)
 		return EXIT_FAILURE;
 	}
 
+	R_WindowUpdate(1280, 720); // NOTE: "De-Hardcode" it
+
 	mesh_modelvertex_t triVertices[] = {
 		{ 0.0f, 0.5f, 0.0f,		1.0f, 0.0f, 0.0f,	0.5f, 1.0f },
 		{ 0.5f, -0.5f, 0.0f,	0.0f, 1.0f, 0.0f,	1.0f, 0.0f },
@@ -90,11 +94,19 @@ int Engine_Run(int argc, const char** argv)
 		.model = MAT4_IDENTITY
 	};
 
+	Mat4_Translate(&triInstance.model, NEW_VEC3(0.0f, 0.0f, -2.0f));
+
 	shader_t testShader;
-	Shader_Init(&testShader, "Sigma", "assets/shaders/test.vert", "assets/shaders/test.frag");
+	Shader_InitRaster(&testShader, "Sigma", "assets/shaders/test.vert", "assets/shaders/test.frag");
 
 	texture_t testTexture;
-	Texture_InitFromImage(&testTexture, "assets/textures/scateleton.png", true, false);
+	Texture_Init(&testTexture, "assets/textures/scateleton.png", true, false);
+
+	framebuffer_attachment_t testAttachments[] = {
+		{ .format = GL_RGB8, .type = GL_UNSIGNED_BYTE }
+	};
+	framebuffer_t testFramebuffer;
+	Framebuffer_Init(&testFramebuffer, 1280, 720, 0, testAttachments, 1, NULL);
 
 	IN_Init();
 
@@ -102,12 +114,21 @@ int Engine_Run(int argc, const char** argv)
 		IN_Update();
 
 		glfwPollEvents();
+		
+		R_DebugMoveUpdate();
 
 		R_Present();
 
+		Framebuffer_Bind(&testFramebuffer);
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		Shader_Bind(&testShader);
 		Texture_Bind(R_GetMissingTexture(), 0);
-		Mesh_DrawModel(&triMesh, &triInstance);
+		Mesh_DrawModel(R_GetCubeMesh(), &triInstance);
+
+		Framebuffer_UnBind();
+		Framebuffer_CopyTo(&testFramebuffer, NULL, false);
 
 		glfwSwapBuffers(window);
 	}
@@ -115,6 +136,7 @@ int Engine_Run(int argc, const char** argv)
 	Mesh_Destroy(&triMesh);
 	Shader_Destroy(&testShader);
 	Texture_Destroy(&testTexture);
+	Framebuffer_Destroy(&testFramebuffer);
 
 	R_Destroy();
 

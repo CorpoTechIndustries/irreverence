@@ -35,18 +35,29 @@ typedef union {
 	};
 } ivec3_t;
 
-void Vec3_Add(vec3_t v1, vec3_t v2, vec3_t* dest);
-void Vec3_Sub(vec3_t v1, vec3_t v2, vec3_t* dest);
-void Vec3_Mul(vec3_t v1, vec3_t v2, vec3_t* dest);
-void Vec3_Div(vec3_t v1, vec3_t v2, vec3_t* dest);
+vec3_t Vec3_Add(vec3_t v1, vec3_t v2);
+vec3_t Vec3_Sub(vec3_t v1, vec3_t v2);
+vec3_t Vec3_Mul(vec3_t v1, vec3_t v2);
+vec3_t Vec3_Div(vec3_t v1, vec3_t v2);
+
+void Vec3_AddTo(vec3_t v1, vec3_t v2, vec3_t* dest);
+void Vec3_SubTo(vec3_t v1, vec3_t v2, vec3_t* dest);
+void Vec3_MulTo(vec3_t v1, vec3_t v2, vec3_t* dest);
+void Vec3_DivTo(vec3_t v1, vec3_t v2, vec3_t* dest);
 
 void Vec3_Normalize(vec3_t vec, vec3_t* dest);
 void Vec3_Cross(vec3_t v1, vec3_t v2, vec3_t* dest);
 float Vec3_Dot(vec3_t v1, vec3_t v2);
+void Vec3_Rotate(float angle, vec3_t axis, vec3_t* dest);
 
-void IVec3_Add(ivec3_t v1, ivec3_t v2, ivec3_t* dest);
-void IVec3_Sub(ivec3_t v1, ivec3_t v2, ivec3_t* dest);
-void IVec3_Mul(ivec3_t v1, ivec3_t v2, ivec3_t* dest);
-void IVec3_Div(ivec3_t v1, ivec3_t v2, ivec3_t* dest);
+ivec3_t IVec3_Add(ivec3_t v1, ivec3_t v2, ivec3_t* dest);
+ivec3_t IVec3_Sub(ivec3_t v1, ivec3_t v2, ivec3_t* dest);
+ivec3_t IVec3_Mul(ivec3_t v1, ivec3_t v2, ivec3_t* dest);
+ivec3_t IVec3_Div(ivec3_t v1, ivec3_t v2, ivec3_t* dest);
+
+void IVec3_AddTo(ivec3_t v1, ivec3_t v2, ivec3_t* dest);
+void IVec3_SubTo(ivec3_t v1, ivec3_t v2, ivec3_t* dest);
+void IVec3_MulTo(ivec3_t v1, ivec3_t v2, ivec3_t* dest);
+void IVec3_DivTo(ivec3_t v1, ivec3_t v2, ivec3_t* dest);
 
 int IVec3_Dot(ivec3_t v1, ivec3_t v2);

@@ -37,7 +37,11 @@
         "unordered_map": "c",
         "unordered_set": "c",
         "mat4.h": "c",
-        "vec3.h": "c"
+        "vec3.h": "c",
+        "glfw3.h": "c",
+        "cstdint": "c",
+        "renderer.h": "c",
+        "algorithm": "c"
     },
     "editor.insertSpaces": false
 }

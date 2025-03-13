@@ -5,16 +5,16 @@ layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aUV;
 
 layout(location = 3) in vec4 aInstanceColor;
-layout(location = 4) in mat4 aInstanceModelmat;
+layout(location = 4) in mat4 aInstanceModel;
 
 layout(std140, binding = 0) uniform GlobalUniform
 {
-    uint Width;
+	uint Width;
 	uint Height;
 	float CurTime;
 	float FrameTime;
-	mat4 ViewMat;
-	mat4 ProjectionMat;
+	mat4 View;
+	mat4 Projection;
 } uGlobal;
 
 out VP_Shared {
@@ -26,7 +26,7 @@ out VP_Shared {
 
 void main()
 {
-	gl_Position = uGlobal.ViewMat * vec4(aPos.xyz, 1.0);
+	gl_Position = uGlobal.Projection * uGlobal.View * aInstanceModel * vec4(aPos, 1.0);
 
 	pFragPos = aPos;
 	pNormal = aNormal;

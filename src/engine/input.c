@@ -4,11 +4,11 @@
 
 #include <GLFW/glfw3.h>
 
-static int s_KeysDown[GLFW_KEY_LAST];
-static int s_KeysPressed[GLFW_KEY_LAST];
+static bool s_KeysDown[GLFW_KEY_LAST];
+static bool s_KeysPressed[GLFW_KEY_LAST];
 
-static int s_MouseDown[16];
-static int s_MousePressed[16];
+static bool s_MouseDown[16];
+static bool s_MousePressed[16];
 
 static float s_fMouseX = 0.0f;
 static float s_fMouseY = 0.0f;
@@ -60,32 +60,32 @@ void IN_MotionEvent(float x, float y)
 	s_fMouseY = y;
 }
 
-int IN_IsKeyDown(int key)
+bool IN_IsKeyDown(int key)
 {
 	return s_KeysDown[key];
 }
 
-int IN_IsKeyPressed(int key)
+bool IN_IsKeyPressed(int key)
 {
 	return s_KeysPressed[key];
 }
 
-int IN_IsKeyUp(int key)
+bool IN_IsKeyUp(int key)
 {
 	return !IN_IsKeyDown(key);
 }
 
-int IN_IsMouseDown(int button)
+bool IN_IsMouseDown(int button)
 {
 	return s_MouseDown[button];
 }
 
-int IN_IsMousePressed(int button)
+bool IN_IsMousePressed(int button)
 {
 	return s_MousePressed[button];
 }
 
-int IN_IsMouseUp(int button)
+bool IN_IsMouseUp(int button)
 {
 	return !IN_IsMouseDown(button);
 }

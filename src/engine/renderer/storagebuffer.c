@@ -5,17 +5,13 @@
 
 void Storagebuffer_Init(storagebuffer_t* storagebuffer, uint8_t location, void* data, size_t size, bool realloc)
 {
-	storagebuffer->id = 0;
 	storagebuffer->realloc = realloc;
 	storagebuffer->location = location;
 	storagebuffer->currentSize = size;
 
-	unsigned int id = 0;
 	glCreateBuffers(1, &storagebuffer->id);
 	glNamedBufferStorage(storagebuffer->id, size, data, GL_DYNAMIC_STORAGE_BIT);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, location, storagebuffer->id);
-
-	// TODO: if realloc is true, store a copy of the data and update that data every it is changed. It would be used for re-giving the data of reallocated buffer
 }
 
 void Storagebuffer_Destroy(storagebuffer_t* storagebuffer)
