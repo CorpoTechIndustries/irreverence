@@ -7,6 +7,12 @@
 
 #include <stdbool.h>
 
+typedef enum {
+	UNIFORM_LOCATION_GLOBAL,
+	UNIFORM_LOCATION_POINTLIGHTS,
+	UNIFORM_LOCATION_SPOTLIGHTS,
+} uniform_location_t;
+
 typedef struct {
 	vec3_t position;
 	vec3_t direction;

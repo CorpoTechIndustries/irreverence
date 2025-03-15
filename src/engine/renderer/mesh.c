@@ -1,12 +1,14 @@
 #include <engine/renderer/mesh.h>
 
+#include <engine/log.h>
+
 #include <stddef.h>
 
 #include <GL/glew.h>
 
 #define SetMatrixLayout(vertexarray, location, offset) for (unsigned int i = 0; i < 4; i++) { unsigned int mat_offset = location + i; glEnableVertexArrayAttrib(vertexarray, mat_offset); glVertexArrayAttribFormat(vertexarray, mat_offset, 4, GL_FLOAT, GL_FALSE, offset + sizeof(float) * 4 * i); glVertexArrayAttribBinding(vertexarray, mat_offset, 1); }
 
-void Mesh_InitModel(mesh_t* mesh, const mesh_modelvertex_t* vertices, uint32_t vertex_count, const uint32_t* indices, uint32_t index_count)
+void Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t vertex_count, const uint32_t* indices, uint32_t index_count)
 {
 	enum {
 		MODELMESH_POSITION,
@@ -19,9 +21,9 @@ void Mesh_InitModel(mesh_t* mesh, const mesh_modelvertex_t* vertices, uint32_t v
 	mesh->vertexCount = vertex_count;
 	mesh->indexCount = index_count;
 	
-	size_t vertexSize = vertex_count * sizeof(mesh_modelvertex_t);
+	size_t vertexSize = vertex_count * sizeof(mesh_vertexmodel_t);
 	size_t indexSize = index_count * sizeof(uint32_t);
-
+		
 	// Create OpenGL Objects
 	glCreateBuffers(1, &mesh->vbo);
 	glNamedBufferStorage(mesh->vbo, vertexSize, vertices, GL_DYNAMIC_STORAGE_BIT);
@@ -65,10 +67,10 @@ void Mesh_InitModel(mesh_t* mesh, const mesh_modelvertex_t* vertices, uint32_t v
 	SetMatrixLayout(mesh->id, MODELMESH_MODELMATRIX, 4 * sizeof(float));
 }
 
-void Mesh_InitSkybox(mesh_t* mesh, const mesh_skyvertex_t* vertices, uint32_t vertex_count)
+void Mesh_InitSkybox(mesh_t* mesh, const mesh_vertexsky_t* vertices, uint32_t vertex_count)
 {
 	
-	size_t vertexSize = vertex_count * sizeof(mesh_skyvertex_t);
+	size_t vertexSize = vertex_count * sizeof(mesh_vertexsky_t);
 
 	mesh->vertexCount = vertex_count;
 	mesh->indexCount = 0;
@@ -84,9 +86,9 @@ void Mesh_Destroy(mesh_t* mesh)
 	glDeleteBuffers(1, &mesh->ibo);
 }
 
-void Mesh_DrawModel(mesh_t* mesh, const mesh_modelinstance_t* instance)
+void Mesh_DrawModel(mesh_t* mesh, const mesh_instancemodel_t* instance)
 {
-	glNamedBufferData(mesh->ibo, sizeof(mesh_modelinstance_t), instance, GL_DYNAMIC_DRAW);
+	glNamedBufferData(mesh->ibo, sizeof(mesh_instancemodel_t), instance, GL_DYNAMIC_DRAW);
 
 	glBindVertexArray(mesh->id);
 	glDrawElements(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, 0);

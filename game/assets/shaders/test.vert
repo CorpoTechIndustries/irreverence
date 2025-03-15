@@ -26,10 +26,11 @@ out VP_Shared {
 
 void main()
 {
-	gl_Position = uGlobal.Projection * uGlobal.View * aInstanceModel * vec4(aPos, 1.0);
+	pFragPos = vec3(aInstanceModel * vec4(aPos, 1.0));
 
-	pFragPos = aPos;
-	pNormal = aNormal;
+	gl_Position = uGlobal.Projection * uGlobal.View * vec4(pFragPos, 1.0);
+
+	pNormal = mat3(transpose(inverse(aInstanceModel))) * aNormal;
 	pUV = aUV;
 
 	pInstanceColor = aInstanceColor;

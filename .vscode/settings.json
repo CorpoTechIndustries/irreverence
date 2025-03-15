@@ -41,7 +41,12 @@
         "glfw3.h": "c",
         "cstdint": "c",
         "renderer.h": "c",
-        "algorithm": "c"
+        "algorithm": "c",
+        "model.h": "c",
+        "material.h": "c",
+        "framebuffer.h": "c",
+        "__node_handle": "c",
+        "string.h": "c"
     },
     "editor.insertSpaces": false,
 	"files.insertFinalNewline": true
