@@ -26,7 +26,7 @@ typedef union {
 	struct {
 		ivec_t x, y;
 	};
-	
+
 	struct {
 		ivec_t r, g;
 	};
@@ -38,7 +38,7 @@ void Vec2_Mul(vec2_t v1, vec2_t v2, vec2_t* dest);
 void Vec2_Div(vec2_t v1, vec2_t v2, vec2_t* dest);
 
 void Vec2_Normalize(vec2_t vec, vec2_t* dest);
-void Vec2_Cross(vec2_t v1, vec2_t v2, vec2_t* dest);
+float Vec2_Cross(vec2_t v1, vec2_t v2);
 float Vec2_Dot(vec2_t v1, vec2_t v2);
 
 void IVec2_Add(ivec2_t v1, ivec2_t v2, ivec2_t* dest);

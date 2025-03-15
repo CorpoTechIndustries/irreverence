@@ -9,6 +9,7 @@ int Sys_PathDeleteFile(const char* path);
 int Sys_PathDeleteDir(const char* path);
 int Sys_PathCreateDir(const char* path);
 int Sys_PathGetFullPath(const char* path, char* buff, size_t buff_size);
+const char* Sys_PathGetExtension(const char* path);
 
 char* Sys_PathReadFile(const char* path, size_t* size);
 

@@ -110,6 +110,19 @@ int Sys_PathGetFullPath(const char* path, char* buff, size_t buff_size)
 	return 1;
 }
 
+const char* Sys_PathGetExtension(const char* path)
+{
+	size_t len = strlen(path);
+
+	while (--len) {
+		if (path[len] == '.') {
+			break;
+		}
+	}
+
+	return path + len + 1;
+}
+
 char* Sys_PathReadFile(const char* path, size_t* out_size)
 {
 	if (!Sys_PathIsFile(path)) {

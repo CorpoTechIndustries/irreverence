@@ -14,6 +14,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <engine/engine.h>
+
 static void glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
 {
 	if (type == GL_DEBUG_TYPE_PERFORMANCE) return;
@@ -95,7 +97,7 @@ bool R_Init()
 	glFrontFace(GL_CCW);
 
 	// Init Objects
-	
+
 	g_View = (view_t) {
 		.position = NEW_VEC3(0.0f, 0.0f, 1.0f),
 		.direction = NEW_VEC3(0.0f, 0.0f, -1.0f),
@@ -131,29 +133,29 @@ bool R_Init()
 	Texture_InitFromMemory(&s_WhiteTexture, (const uint8_t*)&whiteColor, 1, 1, 3, false, false);
 
 	const mesh_modelvertex_t cubeVertices[] = {
-		{ -1.0f, 1.0f, -1.0f,		0.0f, 1.0f, 0.0f,		1.0f, 1.0f}, 
-		{ 1.0f, 1.0f, 1.0f,			0.0f, 1.0f, 0.0f,		0.0f, 0.0f}, 
-		{ 1.0f, 1.0f, -1.0f,		0.0f, 1.0f, 0.0f,		0.0f, 1.0f}, 
-		{ 1.0f, 1.0f, 1.0f,			0.0f, 0.0f, 1.0f,		1.0f, 1.0f}, 
-		{ -1.0f, -1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		0.0f, 0.0f}, 
-		{ 1.0f, -1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		0.0f, 1.0f}, 
-		{ -1.0f, 1.0f, 1.0f,		-1.0f, 0.0f, 0.0f,		1.0f, 1.0f}, 
-		{ -1.0f, -1.0f, -1.0f,		-1.0f, 0.0f, 0.0f,		0.0f, 0.0f}, 
-		{ -1.0f, -1.0f, 1.0f,		-1.0f, 0.0f, 0.0f,		0.0f, 1.0f}, 
-		{ 1.0f, -1.0f, -1.0f,		0.0f, -1.0f, 0.0f,		1.0f, 1.0f}, 
-		{ -1.0f, -1.0f, 1.0f,		0.0f, -1.0f, 0.0f,		0.0f, 0.0f}, 
-		{ -1.0f, -1.0f, -1.0f,		0.0f, -1.0f, 0.0f,		0.0f, 1.0f}, 
-		{ 1.0f, 1.0f, -1.0f,		1.0f, 0.0f, 0.0f,		1.0f, 1.0f}, 
-		{ 1.0f, -1.0f, 1.0f,		1.0f, 0.0f, 0.0f,		0.0f, 0.0f}, 
-		{ 1.0f, -1.0f, -1.0f,		1.0f, 0.0f, 0.0f,		0.0f, 1.0f}, 
-		{ -1.0f, 1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		1.0f, 1.0f}, 
-		{ 1.0f, -1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		0.0f, 0.0f}, 
-		{ -1.0f, -1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		0.0f, 1.0f}, 
-		{ -1.0f, 1.0f, 1.0f,		0.0f, 1.0f, 0.0f,		1.0f, 0.0f}, 
-		{ -1.0f, 1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		1.0f, 0.0f}, 
-		{ -1.0f, 1.0f, -1.0f,		-1.0f, 0.0f, 0.0f,		1.0f, 0.0f}, 
-		{ 1.0f, -1.0f, 1.0f,		0.0f, -1.0f, 0.0f,		1.0f, 0.0f}, 
-		{ 1.0f, 1.0f, 1.0f,			1.0f, 0.0f, 0.0f,		1.0f, 0.0f}, 
+		{ -1.0f, 1.0f, -1.0f,		0.0f, 1.0f, 0.0f,		1.0f, 1.0f},
+		{ 1.0f, 1.0f, 1.0f,			0.0f, 1.0f, 0.0f,		0.0f, 0.0f},
+		{ 1.0f, 1.0f, -1.0f,		0.0f, 1.0f, 0.0f,		0.0f, 1.0f},
+		{ 1.0f, 1.0f, 1.0f,			0.0f, 0.0f, 1.0f,		1.0f, 1.0f},
+		{ -1.0f, -1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		0.0f, 0.0f},
+		{ 1.0f, -1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		0.0f, 1.0f},
+		{ -1.0f, 1.0f, 1.0f,		-1.0f, 0.0f, 0.0f,		1.0f, 1.0f},
+		{ -1.0f, -1.0f, -1.0f,		-1.0f, 0.0f, 0.0f,		0.0f, 0.0f},
+		{ -1.0f, -1.0f, 1.0f,		-1.0f, 0.0f, 0.0f,		0.0f, 1.0f},
+		{ 1.0f, -1.0f, -1.0f,		0.0f, -1.0f, 0.0f,		1.0f, 1.0f},
+		{ -1.0f, -1.0f, 1.0f,		0.0f, -1.0f, 0.0f,		0.0f, 0.0f},
+		{ -1.0f, -1.0f, -1.0f,		0.0f, -1.0f, 0.0f,		0.0f, 1.0f},
+		{ 1.0f, 1.0f, -1.0f,		1.0f, 0.0f, 0.0f,		1.0f, 1.0f},
+		{ 1.0f, -1.0f, 1.0f,		1.0f, 0.0f, 0.0f,		0.0f, 0.0f},
+		{ 1.0f, -1.0f, -1.0f,		1.0f, 0.0f, 0.0f,		0.0f, 1.0f},
+		{ -1.0f, 1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		1.0f, 1.0f},
+		{ 1.0f, -1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		0.0f, 0.0f},
+		{ -1.0f, -1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		0.0f, 1.0f},
+		{ -1.0f, 1.0f, 1.0f,		0.0f, 1.0f, 0.0f,		1.0f, 0.0f},
+		{ -1.0f, 1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		1.0f, 0.0f},
+		{ -1.0f, 1.0f, -1.0f,		-1.0f, 0.0f, 0.0f,		1.0f, 0.0f},
+		{ 1.0f, -1.0f, 1.0f,		0.0f, -1.0f, 0.0f,		1.0f, 0.0f},
+		{ 1.0f, 1.0f, 1.0f,			1.0f, 0.0f, 0.0f,		1.0f, 0.0f},
 		{ 1.0f, 1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		1.0f, 0.0f}
 	};
 	const uint32_t cubeIndices[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 0, 18, 1, 3, 19, 4, 6, 20, 7, 9, 21, 10, 12, 22, 13, 15, 23, 16 };
@@ -187,25 +189,27 @@ void R_DebugMoveUpdate()
 	Vec3_Cross(g_View.direction, g_View.up, &side);
 	Vec3_Normalize(side, &side);
 
+	float ft = Engine_FrameTime();
+
 	if (IN_IsKeyDown(GLFW_KEY_UP)) {
-		Vec3_Rotate(1.0f, side, &g_View.direction);
+		Vec3_Rotate(120.0f * ft, side, &g_View.direction);
 	}
 
 	if (IN_IsKeyDown(GLFW_KEY_DOWN)) {
-		Vec3_Rotate(-1.0f, side, &g_View.direction);
+		Vec3_Rotate(-120.0f * ft, side, &g_View.direction);
 	}
 
 	if (IN_IsKeyDown(GLFW_KEY_LEFT)) {
-		Vec3_Rotate(1.0f, NEW_VEC3(0.0f, 1.0f, 0.0f), &g_View.direction);
+		Vec3_Rotate(120.0f * ft, NEW_VEC3(0.0f, 1.0f, 0.0f), &g_View.direction);
 	}
 
 	if (IN_IsKeyDown(GLFW_KEY_RIGHT)) {
-		Vec3_Rotate(-1.0f, NEW_VEC3(0.0f, 1.0f, 0.0f), &g_View.direction);
+		Vec3_Rotate(-120.0f * ft, NEW_VEC3(0.0f, 1.0f, 0.0f), &g_View.direction);
 	}
 
 	Vec3_Cross(g_View.direction, g_View.up, &side);
 	Vec3_Normalize(side, &side);
-	
+
 	if (IN_IsKeyDown(GLFW_KEY_W)) {
 		Vec3_AddTo(g_View.position, Vec3_Mul(g_View.direction, NEW_VEC3S(0.01f)), &g_View.position);
 	}

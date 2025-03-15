@@ -3,9 +3,12 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/src/**"
+                "${workspaceFolder}/src/**",
+				"${workspaceFolder}/vendor/cglm/include",
+				"${workspaceFolder}/vendor/joltc/include",
+				"${workspaceFolder}/vendor/stb"
             ],
-            "defines": ["__USE_MISC"],
+            "defines": ["__USE_MISC", "PLATFORM_LINUX"],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
             "cppStandard": "c++17",

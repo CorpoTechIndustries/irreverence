@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <engine/audio/audio.h>
+#include <engine/audio/sound.h>
 #include <engine/renderer/renderer.h>
 #include <engine/renderer/shader.h>
 #include <engine/renderer/mesh.h>
@@ -44,6 +46,26 @@ static void resize_callback(GLFWwindow* window, int width, int height)
 	R_WindowUpdate(width, height);
 }
 
+static float startTime = 0.0f;
+static float curTime = 0.0f;
+static float prevTime = 0.0f;
+static float frameTime = 0.0f;
+
+void Engine_ResetTime()
+{
+	prevTime = curTime = startTime = (float)glfwGetTime();
+}
+
+float Engine_CurTime()
+{
+	return curTime - startTime;
+}
+
+float Engine_FrameTime()
+{
+	return frameTime;
+}
+
 int Engine_Run(int argc, const char** argv)
 {
 	Sys_Init();
@@ -71,6 +93,10 @@ int Engine_Run(int argc, const char** argv)
 	glfwMakeContextCurrent(window);
 
 	if (!R_Init()) {
+		return EXIT_FAILURE;
+	}
+
+	if (!Snd_Init()) {
 		return EXIT_FAILURE;
 	}
 
@@ -110,14 +136,38 @@ int Engine_Run(int argc, const char** argv)
 
 	IN_Init();
 
+	sound_file_t soundFile;
+
+	if (!Snd_LoadSoundFromFile(&soundFile, "assets/sounds/test.wav")) {
+		LOG_ERROR("WHAT THE FUCK?");
+	}
+
+	sound_t sound =	Snd_LoadSound(&soundFile);
+
+	Snd_FreeFile(&soundFile);
+
+	sound_stream_t stream;
+
+	Snd_CreateStream(&stream);
+
+	Snd_SetStreamSound(&stream, sound);
+
 	while (!glfwWindowShouldClose(window)) {
 		IN_Update();
 
 		glfwPollEvents();
-		
+
+		prevTime = curTime;
+		curTime = (float)glfwGetTime();
+		frameTime = curTime - prevTime;
+
 		R_DebugMoveUpdate();
 
 		R_Present();
+
+		if (IN_IsKeyPressed(GLFW_KEY_P)) {
+			Snd_PlayStream(&stream);
+		}
 
 		Framebuffer_Bind(&testFramebuffer);
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -133,9 +183,14 @@ int Engine_Run(int argc, const char** argv)
 		glfwSwapBuffers(window);
 	}
 
+	Snd_UnloadSound(sound);
+	Snd_DestroyStream(&stream);
+
 	Mesh_Destroy(&triMesh);
 	Shader_Destroy(&testShader);
 	Texture_Destroy(&testTexture);
+
+	Snd_Destroy();
 	Framebuffer_Destroy(&testFramebuffer);
 
 	R_Destroy();

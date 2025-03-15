@@ -1,0 +1,9 @@
+[submodule "vendor/cglm"]
+	path = vendor/cglm
+	url = https://github.com/recp/cglm.git
+[submodule "vendor/joltc"]
+	path = vendor/joltc
+	url = https://github.com/amerkoleci/joltc.git
+[submodule "vendor/stb"]
+	path = vendor/stb
+	url = https://github.com/nothings/stb.git

@@ -43,5 +43,6 @@
         "renderer.h": "c",
         "algorithm": "c"
     },
-    "editor.insertSpaces": false
+    "editor.insertSpaces": false,
+	"files.insertFinalNewline": true
 }
