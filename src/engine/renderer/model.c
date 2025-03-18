@@ -2,6 +2,7 @@
 
 #include <engine/log.h>
 
+#include <platform/path.h>
 #include <platform/memory.h>
 
 #include <assimp/cimport.h>
@@ -21,6 +22,7 @@ static model_t* s_pModel = NULL;
 static const char* s_pModelPath = NULL;
 static array_t s_pMeshArray = NULL;
 static array_t s_pMeshMaterialsArray = NULL;
+static bool s_bSuccess = false;
 
 typedef struct
 {
@@ -86,6 +88,8 @@ static mesh_data_t ProcessMesh(const struct aiMesh* mesh)
 
 static void RecursiveProcessNode(const struct aiScene* scene, const struct aiNode* node)
 {
+	if (!s_bSuccess) return;
+
 	for (uint32_t i = 0; i < node->mNumMeshes; i++) {
 		mesh_data_t meshdata = ProcessMesh(scene->mMeshes[node->mMeshes[i]]);
 
@@ -101,8 +105,10 @@ static void RecursiveProcessNode(const struct aiScene* scene, const struct aiNod
 			Array_Destroy(meshdata.vertices);
 			Array_Destroy(meshdata.indices);
 		} else {
-			LOG_ERROR("An error occurred while loading Model \"%s\" while processing node named %s", s_pModelPath, node->mName.data);
+			LOG_ERROR("An error occurred while loading Model \"%s\" when processing node named \"%s\"", s_pModelPath, node->mName.data);
 			Model_Destroy(s_pModel);
+
+			s_bSuccess = false;
 
 			return;
 		}
@@ -113,36 +119,39 @@ static void RecursiveProcessNode(const struct aiScene* scene, const struct aiNod
 	}
 }
 
-void Model_Init(model_t* model, const char* path)
+bool Model_Init(model_t* model, const char* path)
 {
-	if (!path) return;
+	if (!path) return false;
 
 	model->meshes = NULL;
 	model->meshMaterials = NULL;
-
-	const char* fileExtension = strrchr(path, '.');
+	
+	const char* fileExtension = Sys_PathGetExtension(path);
 	if (!fileExtension || aiIsExtensionSupported(fileExtension) == AI_FALSE) {
 		LOG_ERROR("Model path does not have a valid or supported extension");
-		return;
+		return false;
 	}
 	const struct aiScene* scene = NULL;
 	scene = aiImportFile(path, ASSIMP_LOADER_FLAG);
 
 	if (!scene) {
 		LOG_ERROR("Model could not be loaded");
-		return;
+		return false;
 	}
 
 	if (scene->mNumMeshes == 0) {
 		LOG_ERROR("Model has no meshes");
-		return;
+		return false;
 	}
 	
 	model->meshes = Array_Create(mesh_t);
 
+	s_pModel = model;
 	s_pModelPath = path;
 	s_pMeshArray = model->meshes;
 	s_pMeshMaterialsArray = model->meshMaterials;
+
+	s_bSuccess = true;
 
 	RecursiveProcessNode(scene, scene->mRootNode);
 
@@ -151,9 +160,11 @@ void Model_Init(model_t* model, const char* path)
 	s_pModelPath = NULL;
 	s_pMeshArray = NULL;
 	s_pMeshMaterialsArray = NULL;
+
+	return s_bSuccess;
 }
 
-void Model_InitFromMeshes(model_t* model, mesh_t* meshes, uint32_t mesh_count)
+bool Model_InitFromMeshes(model_t* model, mesh_t* meshes, uint32_t mesh_count)
 {
 	model->meshes = Array_CreateSize(mesh_t, mesh_count);
 	for (uint32_t i = 0; i < mesh_count; i++) {
@@ -161,29 +172,21 @@ void Model_InitFromMeshes(model_t* model, mesh_t* meshes, uint32_t mesh_count)
 	}
 
 	model->meshMaterials = NULL;
+
+	return true;
 }
 
 void Model_Destroy(model_t* model)
 {
-	uint32_t meshCount = (uint32_t)Array_Size(model->meshes);
-	for (uint32_t i = 0; i < meshCount; i++) {
-		mesh_t mesh;
-		Array_Get(model->meshes, i, mesh);
-
-		Mesh_Destroy(&mesh);
-	}
-
-	/*
-	uint32_t meshMaterialsCount = (uint32_t)Array_Size(model->meshMaterials);
-	for (uint32_t i = 0; i < meshMaterialsCount; i++) {
-		array_t meshMaterials = NULL;
-		Array_Get(model->meshMaterials, i, meshMaterials);
-		
-		if (meshMaterials) Array_Destroy(meshMaterials);
-	}
-	*/
-
 	if (model->meshes) { 
+		uint32_t meshCount = (uint32_t)Array_Size(model->meshes);
+		for (uint32_t i = 0; i < meshCount; i++) {
+			mesh_t mesh;
+			Array_Get(model->meshes, i, mesh);
+	
+			Mesh_Destroy(&mesh);
+		}
+
 		Array_Destroy(model->meshes);
 		model->meshes = NULL;
 	}
@@ -196,17 +199,12 @@ void Model_Destroy(model_t* model)
 
 void Model_Draw(model_t* model, const mesh_instancemodel_t* instance, uint32_t skin)
 {
+	if (!model->meshes) return;
+	
 	uint32_t meshCount = (uint32_t)Array_Count(model->meshes);
 	for (uint32_t i = 0; i < meshCount; i++) {
 		mesh_t mesh;
 		Array_Get(model->meshes, i, mesh);
-
-		/*
-		array_t meshMaterials;
-		Array_Get(model->meshMaterials, i, meshMaterials);
-		material_t* material;
-		Array_Get(meshMaterials, skin, material);
-		*/
 
 		Mesh_DrawModel(&mesh, instance);
 	}

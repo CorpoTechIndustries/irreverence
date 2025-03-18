@@ -8,7 +8,7 @@
 
 #define SetMatrixLayout(vertexarray, location, offset) for (unsigned int i = 0; i < 4; i++) { unsigned int mat_offset = location + i; glEnableVertexArrayAttrib(vertexarray, mat_offset); glVertexArrayAttribFormat(vertexarray, mat_offset, 4, GL_FLOAT, GL_FALSE, offset + sizeof(float) * 4 * i); glVertexArrayAttribBinding(vertexarray, mat_offset, 1); }
 
-void Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t vertex_count, const uint32_t* indices, uint32_t index_count)
+bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t vertex_count, const uint32_t* indices, uint32_t index_count)
 {
 	enum {
 		MODELMESH_POSITION,
@@ -65,15 +65,19 @@ void Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t v
 	glVertexArrayAttribBinding(mesh->id, MODELMESH_COLOR, 1);
 
 	SetMatrixLayout(mesh->id, MODELMESH_MODELMATRIX, 4 * sizeof(float));
+
+	return true;
 }
 
-void Mesh_InitSkybox(mesh_t* mesh, const mesh_vertexsky_t* vertices, uint32_t vertex_count)
+bool Mesh_InitSkybox(mesh_t* mesh, const mesh_vertexsky_t* vertices, uint32_t vertex_count)
 {
 	
 	size_t vertexSize = vertex_count * sizeof(mesh_vertexsky_t);
 
 	mesh->vertexCount = vertex_count;
 	mesh->indexCount = 0;
+
+	return true;
 }
 
 void Mesh_Destroy(mesh_t* mesh)

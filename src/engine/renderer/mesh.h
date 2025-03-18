@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <math/mat4.h>
@@ -17,7 +18,7 @@ typedef struct {
 
 typedef struct {
 	float r, g, b, a;	// Color
-	mat4_t model;
+	mat4_t model;		// Model Matrix
 } mesh_instancemodel_t;
 
 typedef struct {
@@ -29,8 +30,8 @@ typedef struct {
 	uint32_t indexCount;
 } mesh_t;
 
-void Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t vertex_count, const uint32_t* indices, uint32_t index_count);
-void Mesh_InitSkybox(mesh_t* mesh, const mesh_vertexsky_t* vertices, uint32_t vertex_count);
+bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t vertex_count, const uint32_t* indices, uint32_t index_count);
+bool Mesh_InitSkybox(mesh_t* mesh, const mesh_vertexsky_t* vertices, uint32_t vertex_count);
 void Mesh_Destroy(mesh_t* mesh);
 
 void Mesh_DrawModel(mesh_t* mesh, const mesh_instancemodel_t* instance);

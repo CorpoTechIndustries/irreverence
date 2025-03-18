@@ -2,7 +2,7 @@
 
 #include <GL/glew.h>
 
-void Uniform_Init(uniform_t* uniform, uint8_t location, void* data, size_t size)
+bool Uniform_Init(uniform_t* uniform, uint8_t location, void* data, size_t size)
 {
 	uniform->location = location;
 	uniform->currentSize = size;
@@ -10,6 +10,8 @@ void Uniform_Init(uniform_t* uniform, uint8_t location, void* data, size_t size)
 	glCreateBuffers(1, &uniform->id);
 	glNamedBufferData(uniform->id, (GLsizeiptr)size, data, GL_DYNAMIC_DRAW);
 	glBindBufferBase(GL_UNIFORM_BUFFER, location, uniform->id);
+
+	return true;
 }
 
 void Uniform_Destroy(uniform_t* uniform)

@@ -24,25 +24,25 @@ typedef struct {
 	float brightness;
 } spotlight_data_t;
 
-void Lighting_Init();
-void Lighting_Destroy();
+void Light_Init();
+void Light_Destroy();
 
-void Lighting_Update();
+void Light_Update();
 
-uint32_t Lighting_AddPointlight(const pointlight_data_t* light);
-void Lighting_RemovePointlight(uint32_t id);
+uint32_t Light_AddPointlight(const pointlight_data_t* light);
+void Light_RemovePointlight(uint32_t id);
 
-void Lighting_SetPLightPosition(uint32_t id, vec3_t position);
-void Lighting_SetPLightBrightness(uint32_t id, float brightness);
-void Lighting_SetPLightColor(uint32_t id, vec3_t color);
-void Lighting_SetPLightRadius(uint32_t id, float radius);
+void Light_SetPLightPosition(uint32_t id, vec3_t position);
+void Light_SetPLightBrightness(uint32_t id, float brightness);
+void Light_SetPLightColor(uint32_t id, vec3_t color);
+void Light_SetPLightRadius(uint32_t id, float radius);
 
-uint32_t Lighting_AddSpotlight(const spotlight_data_t* light);
-void Lighting_RemoveSpotlight(uint32_t id);
+uint32_t Light_AddSpotlight(const spotlight_data_t* light);
+void Light_RemoveSpotlight(uint32_t id);
 
-void Lighting_SetSLightPosition(uint32_t id, vec3_t position);
-void Lighting_SetSLightCutoff(uint32_t id, float cutoff);
-void Lighting_SetSLightDirection(uint32_t id, vec3_t direction);
-void Lighting_SetSLightOuterCutoff(uint32_t id, float outer_cutoff);
-void Lighting_SetSLightColor(uint32_t id, vec3_t color);
-void Lighting_SetSLightBrightness(uint32_t id, float brightness);
+void Light_SetSLightPosition(uint32_t id, vec3_t position);
+void Light_SetSLightCutoff(uint32_t id, float cutoff);
+void Light_SetSLightDirection(uint32_t id, vec3_t direction);
+void Light_SetSLightOuterCutoff(uint32_t id, float outer_cutoff);
+void Light_SetSLightColor(uint32_t id, vec3_t color);
+void Light_SetSLightBrightness(uint32_t id, float brightness);

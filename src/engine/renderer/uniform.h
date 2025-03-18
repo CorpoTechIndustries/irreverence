@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -9,7 +10,7 @@ typedef struct {
 	size_t currentSize;
 } uniform_t;
 
-void Uniform_Init(uniform_t* uniform, uint8_t location, void* data, size_t size);
+bool Uniform_Init(uniform_t* uniform, uint8_t location, void* data, size_t size);
 void Uniform_Destroy(uniform_t* uniform);
 
 void Uniform_Update(uniform_t* uniform, void* data, size_t data_size, size_t offset);

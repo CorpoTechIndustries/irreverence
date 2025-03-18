@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-void Material_Init(material_t* material, const char* name, texture_t** textures, uint8_t texture_count, material_flags_t flags)
+bool Material_Init(material_t* material, const char* name, texture_t** textures, uint8_t texture_count, material_flags_t flags)
 {
 	strncpy(material->name, name, MAX_MATERIAL_NAME_LENGTH);
 	material->flags = flags;
@@ -17,6 +17,8 @@ void Material_Init(material_t* material, const char* name, texture_t** textures,
 	}
 	
 	// TODO: Store Material, or maybe instead of storing it here, store it on Asset Manager?
+
+	return true;
 }
 
 void Material_Destroy(material_t* material)

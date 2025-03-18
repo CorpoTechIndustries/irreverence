@@ -14,9 +14,9 @@
 #include <engine/renderer/model.h>
 #include <engine/renderer/texture.h>
 #include <engine/renderer/framebuffer.h>
+#include <engine/physics/physics.h>
 #include <engine/log.h>
 #include <engine/input.h>
-#include <util/bitset.h>
 
 #include <platform/sys.h>
 
@@ -102,6 +102,10 @@ int Engine_Run(int argc, const char** argv)
 		return EXIT_FAILURE;
 	}
 
+	if (!Phys_Init()) {
+		return EXIT_FAILURE;
+	}
+
 	R_WindowUpdate(1280, 720); // NOTE: "De-Hardcode" it
 
 	mesh_vertexmodel_t triVertices[] = {
@@ -114,16 +118,6 @@ int Engine_Run(int argc, const char** argv)
 	mesh_t triMesh;
 	Mesh_InitModel(&triMesh, triVertices, sizeof(triVertices) / sizeof(mesh_vertexmodel_t), triIndices, sizeof(triIndices) / sizeof(uint32_t));
 
-	mesh_instancemodel_t floorInstance = {
-		.r = 0.75f,
-		.g = 0.75f,
-		.b = 0.75f,
-		.a = 1.0f,
-		.model = MAT4_IDENTITY
-	};
-	Mat4_Translate(&floorInstance.model, NEW_VEC3(0.0f, -1.0f, 0.0f));
-	Mat4_Scale(&floorInstance.model, NEW_VEC3(10.0f, 1.0f, 10.0f));
-
 	mesh_instancemodel_t snickInstance = {
 		.r = 0.9f,
 		.g = 0.9f,
@@ -132,7 +126,7 @@ int Engine_Run(int argc, const char** argv)
 		.model = MAT4_IDENTITY
 	};
 
-	Mat4_Translate(&snickInstance.model, NEW_VEC3(0.0f, 1.5f, -2.0f));
+	Mat4_Translate(&snickInstance.model, NEW_VEC3(2.0f, 1.5f, -2.0f));
 	Mat4_Scale(&snickInstance.model, NEW_VEC3S(0.2f));
 	
 	shader_t testShader;
@@ -176,11 +170,35 @@ int Engine_Run(int argc, const char** argv)
 		.brightness = 0.5f
 	};
 
-	uint32_t lid1 = Lighting_AddSpotlight(&lightParams);
+	uint32_t lid1 = Light_AddSpotlight(&lightParams);
 
 	lightParams.color = NEW_VEC3(1.0f, 0.0f, 0.0f);
 
 	g_View.position = NEW_VEC3(0.0f, 2.0f, 0.0f);
+
+
+	quat_t coobeStartQuat = QUAT_IDENTITY;
+	Quat_AxisAngle(45.0f, NEW_VEC3S(1.0f), &coobeStartQuat);
+
+	physobj_t* coobe = Phys_AddCube(NEW_VEC3(-2.0f, 20.0f, -3.0f), coobeStartQuat, NEW_VEC3S(0.5f), PHYS_TYPE_DYNAMIC, PHYS_LAYER_MOVING);
+	mesh_instancemodel_t coobeInstance = {
+		.r = 1.0f,
+		.g = 0.5f,
+		.b = 0.5f,
+		.a = 1.0f,
+		.model = MAT4_IDENTITY
+	};
+
+	physobj_t* floor = Phys_AddCube(NEW_VEC3(0.0f, -1.0f, 0.0f), QUAT_IDENTITY, NEW_VEC3(10.0f, 1.0f, 10.0f), PHYS_TYPE_STATIC, PHYS_LAYER_NONMOVING);
+	mesh_instancemodel_t floorInstance = {
+		.r = 0.75f,
+		.g = 0.75f,
+		.b = 0.75f,
+		.a = 1.0f,
+		.model = MAT4_IDENTITY
+	};
+	Mat4_Translate(&floorInstance.model, NEW_VEC3(0.0f, -1.0f, 0.0f));
+	Mat4_Scale(&floorInstance.model, NEW_VEC3(10.0f, 1.0f, 10.0f));
 
 	float hi = 0.5f;
 	while (!glfwWindowShouldClose(window)) {
@@ -192,6 +210,8 @@ int Engine_Run(int argc, const char** argv)
 		curTime = (float)glfwGetTime();
 		frameTime = curTime - prevTime;
 
+		Phys_Update();
+
 		R_DebugMoveUpdate();
 
 		R_Present();
@@ -200,7 +220,7 @@ int Engine_Run(int argc, const char** argv)
 			Snd_PlayStream(&stream);
 			
 			if (lid1 != UINT32_MAX) {
-				Lighting_RemoveSpotlight(lid1);
+				Light_RemoveSpotlight(lid1);
 				lid1 = UINT32_MAX;
 			}
 
@@ -211,16 +231,16 @@ int Engine_Run(int argc, const char** argv)
 				.radius = 100.0f
 			};
 			
-			Lighting_AddPointlight(&christParams);
+			Light_AddPointlight(&christParams);
 			
 			christParams.position = NEW_VEC3(3.0f, 2.0f, -1.0f);
 			christParams.color = NEW_VEC3(0.0f, 1.0f, 0.0f);
-			Lighting_AddPointlight(&christParams);
+			Light_AddPointlight(&christParams);
 		}
 
 		if (IN_IsKeyPressed(GLFW_KEY_R)) {
 			hi += 0.05f;
-			Lighting_SetSLightBrightness(lid1, hi);
+			Light_SetSLightBrightness(lid1, hi);
 		}
 
 		Framebuffer_Bind(&testFramebuffer);
@@ -232,6 +252,17 @@ int Engine_Run(int argc, const char** argv)
 		Mesh_DrawModel(R_GetCubeMesh(), &floorInstance);
 
 		Model_Draw(&testModel, &snickInstance, 0);
+
+		coobeInstance.model = MAT4_IDENTITY;
+		Mat4_Translate(&coobeInstance.model, coobe->position);
+		Mat4_Scale(&coobeInstance.model, NEW_VEC3S(0.5f));
+		
+		float coobeAngle = 0.0f;
+		vec3_t coobeAxis = VEC3_ZERO;
+		Quat_GetAxisAngle(&coobe->rotation, &coobeAngle, &coobeAxis);
+		Mat4_Rotate(&coobeInstance.model, coobeAngle, coobeAxis);
+
+		Mesh_DrawModel(R_GetCubeMesh(), &coobeInstance);
 
 		Framebuffer_UnBind();
 		Framebuffer_CopyTo(&testFramebuffer, NULL, false);
@@ -247,9 +278,11 @@ int Engine_Run(int argc, const char** argv)
 	Texture_Destroy(&testTexture);
 
 	Model_Destroy(&testModel);
+	Framebuffer_Destroy(&testFramebuffer);
+
+	Phys_Destroy();
 
 	Snd_Destroy();
-	Framebuffer_Destroy(&testFramebuffer);
 
 	R_Destroy();
 

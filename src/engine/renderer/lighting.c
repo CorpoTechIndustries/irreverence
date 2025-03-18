@@ -28,7 +28,7 @@ static uniform_t s_SpotlightUniform;
 static pointlight_t* s_pPointlights = NULL; 
 static spotlight_t* s_pSpotlights = NULL; 
 
-void Lighting_Init()
+void Light_Init()
 {
 	Uniform_Init(&s_PointlightUniform, UNIFORM_LOCATION_POINTLIGHTS, NULL, sizeof(pointlight_data_t) * MAX_POINTLIGHTS + sizeof(uint32_t));
 	Uniform_Init(&s_SpotlightUniform, UNIFORM_LOCATION_SPOTLIGHTS, NULL, sizeof(spotlight_data_t) * MAX_SPOTLIGHTS + sizeof(uint32_t));
@@ -40,13 +40,13 @@ void Lighting_Init()
 	Sys_MemZero(s_pSpotlights, sizeof(spotlight_t) * MAX_SPOTLIGHTS);
 }
 
-void Lighting_Destroy()
+void Light_Destroy()
 {
 	if (s_pPointlights) Array_Destroy(s_pPointlights);
 	if (s_pSpotlights) Array_Destroy(s_pSpotlights);
 }
 
-void Lighting_Update()
+void Light_Update()
 {
 	uint32_t pointlightCount = 0;
 	for (uint32_t i = 0; i < MAX_POINTLIGHTS; i++) {
@@ -75,7 +75,7 @@ void Lighting_Update()
 	Uniform_Update(&s_SpotlightUniform, &spotlightCount, sizeof(uint32_t), sizeof(spotlight_data_t) * MAX_SPOTLIGHTS);
 }
 
-uint32_t Lighting_AddPointlight(const pointlight_data_t* light)
+uint32_t Light_AddPointlight(const pointlight_data_t* light)
 {
 	uint32_t id = UINT32_MAX;
 	for (uint32_t i = 0; i < MAX_POINTLIGHTS; i++) {
@@ -100,7 +100,7 @@ uint32_t Lighting_AddPointlight(const pointlight_data_t* light)
 	return id;
 }
 
-void Lighting_RemovePointlight(uint32_t id)
+void Light_RemovePointlight(uint32_t id)
 {
 	if (id >= MAX_POINTLIGHTS || !s_pPointlights[id].ready) return;
 
@@ -116,7 +116,7 @@ void Lighting_RemovePointlight(uint32_t id)
 	Uniform_Update(&s_PointlightUniform, &emptylight, sizeof(pointlight_data_t), sizeof(pointlight_data_t) * id);
 }
 
-void Lighting_SetPLightPosition(uint32_t id, vec3_t position)
+void Light_SetPLightPosition(uint32_t id, vec3_t position)
 {
 	if (id >= MAX_POINTLIGHTS) return;
 
@@ -127,7 +127,7 @@ void Lighting_SetPLightPosition(uint32_t id, vec3_t position)
 	light->outdated = true;
 }
 
-void Lighting_SetPLightBrightness(uint32_t id, float brightness)
+void Light_SetPLightBrightness(uint32_t id, float brightness)
 {
 	if (id >= MAX_POINTLIGHTS) return;
 
@@ -138,7 +138,7 @@ void Lighting_SetPLightBrightness(uint32_t id, float brightness)
 	light->outdated = true;
 }
 
-void Lighting_SetPLightColor(uint32_t id, vec3_t color)
+void Light_SetPLightColor(uint32_t id, vec3_t color)
 {
 	if (id >= MAX_POINTLIGHTS) return;
 
@@ -149,7 +149,7 @@ void Lighting_SetPLightColor(uint32_t id, vec3_t color)
 	light->outdated = true;
 }
 
-void Lighting_SetPLightRadius(uint32_t id, float radius)
+void Light_SetPLightRadius(uint32_t id, float radius)
 {
 	if (id >= MAX_POINTLIGHTS) return;
 
@@ -160,7 +160,7 @@ void Lighting_SetPLightRadius(uint32_t id, float radius)
 	light->outdated = true;
 }
 
-uint32_t Lighting_AddSpotlight(const spotlight_data_t* light)
+uint32_t Light_AddSpotlight(const spotlight_data_t* light)
 {
 	uint32_t id = UINT32_MAX;
 	for (uint32_t i = 0; i < MAX_SPOTLIGHTS; i++) {
@@ -187,7 +187,7 @@ uint32_t Lighting_AddSpotlight(const spotlight_data_t* light)
 	return id;
 }
 
-void Lighting_RemoveSpotlight(uint32_t id)
+void Light_RemoveSpotlight(uint32_t id)
 {
 	if (id >= MAX_SPOTLIGHTS || !s_pSpotlights[id].ready) return;
 
@@ -205,7 +205,7 @@ void Lighting_RemoveSpotlight(uint32_t id)
 	Uniform_Update(&s_SpotlightUniform, &emptylight, sizeof(spotlight_data_t), sizeof(spotlight_data_t) * id);
 }
 
-void Lighting_SetSLightPosition(uint32_t id, vec3_t position)
+void Light_SetSLightPosition(uint32_t id, vec3_t position)
 {
 	if (id >= MAX_SPOTLIGHTS) return;
 
@@ -216,7 +216,7 @@ void Lighting_SetSLightPosition(uint32_t id, vec3_t position)
 	light->outdated = true;
 }
 
-void Lighting_SetSLightCutoff(uint32_t id, float cutoff)
+void Light_SetSLightCutoff(uint32_t id, float cutoff)
 {
 	if (id >= MAX_SPOTLIGHTS) return;
 
@@ -227,7 +227,7 @@ void Lighting_SetSLightCutoff(uint32_t id, float cutoff)
 	light->outdated = true;
 }
 
-void Lighting_SetSLightDirection(uint32_t id, vec3_t direction)
+void Light_SetSLightDirection(uint32_t id, vec3_t direction)
 {
 	if (id >= MAX_SPOTLIGHTS) return;
 
@@ -238,7 +238,7 @@ void Lighting_SetSLightDirection(uint32_t id, vec3_t direction)
 	light->outdated = true;
 }
 
-void Lighting_SetSLightOuterCutoff(uint32_t id, float outer_cutoff)
+void Light_SetSLightOuterCutoff(uint32_t id, float outer_cutoff)
 {
 	if (id >= MAX_SPOTLIGHTS) return;
 
@@ -249,7 +249,7 @@ void Lighting_SetSLightOuterCutoff(uint32_t id, float outer_cutoff)
 	light->outdated = true;
 }
 
-void Lighting_SetSLightColor(uint32_t id, vec3_t color)
+void Light_SetSLightColor(uint32_t id, vec3_t color)
 {
 	if (id >= MAX_SPOTLIGHTS) return;
 
@@ -260,7 +260,7 @@ void Lighting_SetSLightColor(uint32_t id, vec3_t color)
 	light->outdated = true;
 }
 
-void Lighting_SetSLightBrightness(uint32_t id, float brightness)
+void Light_SetSLightBrightness(uint32_t id, float brightness)
 {
 	if (id >= MAX_SPOTLIGHTS) return;
 

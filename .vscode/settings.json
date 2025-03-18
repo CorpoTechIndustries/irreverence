@@ -46,7 +46,10 @@
         "material.h": "c",
         "framebuffer.h": "c",
         "__node_handle": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "bitset.h": "c",
+        "lighting.h": "c",
+        "__config": "c"
     },
     "editor.insertSpaces": false,
 	"files.insertFinalNewline": true

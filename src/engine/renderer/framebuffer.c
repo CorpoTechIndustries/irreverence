@@ -7,7 +7,7 @@
 
 #include <GL/glew.h>
 
-void Framebuffer_Init(
+bool Framebuffer_Init(
 	framebuffer_t* framebuffer, 
 	uint32_t width, 
 	uint32_t height, 
@@ -24,7 +24,7 @@ void Framebuffer_Init(
 	Sys_MemZero(framebuffer->colorTextures, sizeof(framebuffer->colorTextures));
 
 	if (attachment_count > MAX_FRAMEBUFFER_COLOR) {
-		return;
+		return false;
 	}
 
 	glCreateFramebuffers(1, &framebuffer->id);
@@ -66,7 +66,7 @@ void Framebuffer_Init(
 			Texture_Destroy(&framebuffer->depthTexture);
 		}
 
-		return;
+		return false;
 	}
 
 	uint8_t colorCount = 0;
@@ -85,6 +85,8 @@ void Framebuffer_Init(
 	}
 
 	framebuffer->id = framebuffer->id;
+
+	return true;
 }
 
 void Framebuffer_Destroy(framebuffer_t* framebuffer)

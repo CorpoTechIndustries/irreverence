@@ -1,11 +1,14 @@
 #pragma once
 
-#include <engine/renderer/texture.h>
 #include <engine/renderer/mesh.h>
 #include <math/vec2.h>
 #include <math/vec3.h>
 
 #include <stdbool.h>
+
+typedef struct Texture texture_t;
+
+typedef uint32_t gapi_enum_t;
 
 typedef enum {
 	UNIFORM_LOCATION_GLOBAL,

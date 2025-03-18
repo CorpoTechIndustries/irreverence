@@ -1,6 +1,7 @@
 #include <engine/renderer/renderer.h>
 
 #include <engine/renderer/lighting.h>
+#include <engine/renderer/texture.h>
 #include <engine/renderer/uniform.h>
 #include <engine/log.h>
 #include <engine/input.h>
@@ -60,8 +61,6 @@ static void glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 	}
 }
 
-view_t g_View;
-
 static uniform_t s_GlobalUniform;
 static struct {
 	uint32_t width;
@@ -110,7 +109,7 @@ bool R_Init()
 
 	Uniform_Init(&s_GlobalUniform, 0, NULL, sizeof(s_GlobalData));
 
-	Lighting_Init();
+	Light_Init();
 
 	struct UCRGB {
 		uint8_t r, g, b;
@@ -177,7 +176,7 @@ void R_Destroy()
 
 	Mesh_Destroy(&s_CubeMesh);
 
-	Lighting_Destroy();
+	Light_Destroy();
 }
 
 void R_WindowUpdate(int width, int height)
@@ -216,34 +215,34 @@ void R_DebugMoveUpdate()
 	Vec3_Normalize(side, &side);
 
 	if (IN_IsKeyDown(GLFW_KEY_W)) {
-		Vec3_AddTo(g_View.position, Vec3_Mul(g_View.direction, NEW_VEC3S(0.01f)), &g_View.position);
+		Vec3_AddTo(g_View.position, Vec3_Mul(g_View.direction, NEW_VEC3S(5.0f * ft)), &g_View.position);
 	}
 
 	if (IN_IsKeyDown(GLFW_KEY_S)) {
-		Vec3_SubTo(g_View.position, Vec3_Mul(g_View.direction, NEW_VEC3S(0.01f)), &g_View.position);
+		Vec3_SubTo(g_View.position, Vec3_Mul(g_View.direction, NEW_VEC3S(5.0f * ft)), &g_View.position);
 	}
 
 	if (IN_IsKeyDown(GLFW_KEY_A)) {
-		Vec3_SubTo(g_View.position, Vec3_Mul(side, NEW_VEC3S(0.01f)), &g_View.position);
+		Vec3_SubTo(g_View.position, Vec3_Mul(side, NEW_VEC3S(5.0f * ft)), &g_View.position);
 	}
 
 	if (IN_IsKeyDown(GLFW_KEY_D)) {
-		Vec3_AddTo(g_View.position, Vec3_Mul(side, NEW_VEC3S(0.01f)), &g_View.position);
+		Vec3_AddTo(g_View.position, Vec3_Mul(side, NEW_VEC3S(5.0f * ft)), &g_View.position);
 	}
 
 	if (IN_IsKeyDown(GLFW_KEY_SPACE)) {
-		g_View.position.y += 0.01f;
+		g_View.position.y += 5.0f * ft;
 	}
 
 	if (IN_IsKeyDown(GLFW_KEY_LEFT_CONTROL)) {
-		g_View.position.y -= 0.01f;
+		g_View.position.y -= 5.0f * ft;
 	}
 }
 
 void R_Present()
 {
-	s_GlobalData.curtime = 0.0f;
-	s_GlobalData.frametime = 0.0f;
+	s_GlobalData.curtime = Engine_CurTime();
+	s_GlobalData.frametime = Engine_FrameTime();
 
 	float aspect = (float)s_GlobalData.width / (float)s_GlobalData.height;
 	Mat4_LookAt(g_View.position, Vec3_Add(g_View.position, g_View.direction), g_View.up, &s_GlobalData.view);
@@ -251,7 +250,7 @@ void R_Present()
 
 	Uniform_Update(&s_GlobalUniform, &s_GlobalData, sizeof(s_GlobalData), 0);
 
-	Lighting_Update();
+	Light_Update();
 }
 
 ivec2_t R_GetWindowSize()
@@ -278,3 +277,5 @@ mesh_t* R_GetCubeMesh()
 {
 	return &s_CubeMesh;
 }
+
+view_t g_View;

@@ -1,14 +1,16 @@
 #pragma once
 
+#include <engine/renderer/renderer.h>
 #include <engine/renderer/texture.h>
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define MAX_FRAMEBUFFER_COLOR 8
 
 typedef struct {
-	uint32_t format;
-	uint32_t type;
+	gapi_enum_t format;
+	gapi_enum_t type;
 } framebuffer_attachment_t;
 
 typedef struct Framebuffer {
@@ -20,7 +22,7 @@ typedef struct Framebuffer {
 	texture_t depthTexture;
 } framebuffer_t;
 
-void Framebuffer_Init(
+bool Framebuffer_Init(
 	framebuffer_t* framebuffer, 
 	uint32_t width, 
 	uint32_t height,

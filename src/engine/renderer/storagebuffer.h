@@ -11,7 +11,7 @@ typedef struct {
 	size_t currentSize;
 } storagebuffer_t;
 
-void Storagebuffer_Init(storagebuffer_t* storagebuffer, uint8_t location, void* data, size_t size, bool realloc);
+bool Storagebuffer_Init(storagebuffer_t* storagebuffer, uint8_t location, void* data, size_t size, bool realloc);
 void Storagebuffer_Destroy(storagebuffer_t* storagebuffer);
 
 void Storagebuffer_Update(storagebuffer_t* storagebuffer, void* data, size_t data_size, size_t offset);

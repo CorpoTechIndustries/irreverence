@@ -8,9 +8,9 @@
 #include <stb_image.h>
 #include <GL/glew.h>
 
-void Texture_Init(texture_t* texture, const char* image_path, bool linearize, bool gen_mipmaps)
+bool Texture_Init(texture_t* texture, const char* image_path, bool linearize, bool gen_mipmaps)
 {
-	if (!image_path) return;
+	if (!image_path) return false;
 
 	stbi_set_flip_vertically_on_load(true);
 
@@ -19,15 +19,17 @@ void Texture_Init(texture_t* texture, const char* image_path, bool linearize, bo
 
 	if (!data) {
 		LOG_ERROR("Failed to create texture from image \"%s\", reason: %s", image_path, stbi_failure_reason());
-		return;
+		return false;
 	}
 
 	Texture_InitFromMemory(texture, data, width, height, channels, linearize, gen_mipmaps);
 
 	stbi_image_free(data);
+
+	return true;
 }
 
-void Texture_InitFromMemory(texture_t* texture, const uint8_t* data, uint32_t width, uint32_t height, uint8_t channel_count, bool linearize, bool gen_mipmaps)
+bool Texture_InitFromMemory(texture_t* texture, const uint8_t* data, uint32_t width, uint32_t height, uint8_t channel_count, bool linearize, bool gen_mipmaps)
 {
 	texture->width = width;
 	texture->height = height;
@@ -71,17 +73,19 @@ void Texture_InitFromMemory(texture_t* texture, const uint8_t* data, uint32_t wi
 			glTextureSubImage2D(texture->id, 0, 0, 0, width, height, glFormatAlt, GL_UNSIGNED_BYTE, data);
 		}
 	}
+
+	return true;
 }
 
-void Texture_InitColorAttachment(
+bool Texture_InitColorAttachment(
 	texture_t* texture,
 	framebuffer_t* framebuffer,
 	uint8_t location,
 	uint32_t width,
 	uint32_t height,
 	uint8_t samples,
-	uint32_t format,
-	uint32_t type)
+	gapi_enum_t format,
+	gapi_enum_t type)
 {
 	texture->width = width;
 	texture->height = height;
@@ -101,16 +105,18 @@ void Texture_InitColorAttachment(
 	}
 
 	glNamedFramebufferTexture(framebuffer->id, GL_COLOR_ATTACHMENT0 + location, texture->id, 0);
+
+	return true;
 }
 
-void Texture_InitDepthAttachment(
+bool Texture_InitDepthAttachment(
 	texture_t* texture,
 	framebuffer_t* framebuffer,
 	uint32_t width,
 	uint32_t height,
 	uint8_t samples,
-	uint32_t format,
-	uint32_t type)
+	gapi_enum_t format,
+	gapi_enum_t type)
 {
 	texture->width = width;
 	texture->height = height;
@@ -130,6 +136,8 @@ void Texture_InitDepthAttachment(
 	}
 
 	glNamedFramebufferTexture(framebuffer->id, GL_DEPTH_ATTACHMENT, texture->id, 0);
+
+	return true;
 }
 
 void Texture_Destroy(texture_t* texture)
