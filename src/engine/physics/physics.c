@@ -38,7 +38,7 @@ bool Phys_Init()
 	s_pOLPFTable = JPH_ObjectLayerPairFilterTable_Create(2);
 	JPH_ObjectLayerPairFilterTable_EnableCollision(s_pOLPFTable, PHYS_LAYER_NONMOVING, PHYS_LAYER_MOVING);
 	JPH_ObjectLayerPairFilterTable_EnableCollision(s_pOLPFTable, PHYS_LAYER_MOVING, PHYS_LAYER_NONMOVING);
-	
+
 	s_pBPLITable = JPH_BroadPhaseLayerInterfaceTable_Create(2, 2);
 	JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(s_pBPLITable, PHYS_LAYER_NONMOVING, PHYS_LAYER_NONMOVING);
 	JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(s_pBPLITable, PHYS_LAYER_MOVING, PHYS_LAYER_MOVING);
@@ -89,7 +89,7 @@ void Phys_Destroy()
 	JPH_Shutdown();
 }
 
-void Phys_Update()
+void Phys_Update(float delta)
 {
 	const float cDelta = 1.0f / 60.0f;
 	const int cSteps = 1;
@@ -110,7 +110,7 @@ void Phys_Update()
 		JPH_Body_GetLinearVelocity((JPH_Body*)lockRead.body, (JPH_Vec3*)&obj->velocity);
 		JPH_Body_GetAngularVelocity((JPH_Body*)lockRead.body, (JPH_Vec3*)&obj->angularVelocity);
 	}
-	
+
 }
 
 static uint16_t PhysObjFreeId()
@@ -118,7 +118,7 @@ static uint16_t PhysObjFreeId()
 	uint16_t index = UINT16_MAX;
 	for (uint16_t i = 0; i < MAX_PHYSICS_OBJECTS; i++) {
 		physobj_t* obj = &s_PhysObjects[i];
-		
+
 		if (obj->bodyId != INVALID_BODYID) continue;
 
 		index = i;
@@ -148,7 +148,7 @@ static physobj_t* PhysObjAdd(const physobj_t* data)
 }
 
 physobj_t* Phys_AddCube(vec3_t position, quat_t rotation, vec3_t size, phys_type_t type, phys_layer_t layer)
-{	
+{
 	uint16_t index = PhysObjFreeId();
 	if (index == UINT16_MAX) {
 		return NULL;
@@ -156,7 +156,7 @@ physobj_t* Phys_AddCube(vec3_t position, quat_t rotation, vec3_t size, phys_type
 
 	JPH_Vec3 jphSize = { size.x, size.y, size.z };
 	JPH_BoxShape* shape = JPH_BoxShape_Create(&jphSize, JPH_DEFAULT_CONVEX_RADIUS);
-	
+
 	JPH_BodyCreationSettings* settings = JPH_BodyCreationSettings_Create3(
 		(const JPH_Shape*)shape,
 		(const JPH_RVec3*)&position,
@@ -168,7 +168,7 @@ physobj_t* Phys_AddCube(vec3_t position, quat_t rotation, vec3_t size, phys_type
 
 	JPH_BodyID bodyId = JPH_BodyInterface_CreateAndAddBody(s_pBodyInterface, settings, JPH_Activation_Activate);
 	JPH_BodyCreationSettings_Destroy(settings);
-	
+
 	if (bodyId == INVALID_BODYID) {
 		return NULL;
 	}
@@ -197,14 +197,14 @@ physobj_t* Phys_AddSphere(vec3_t position, quat_t rotation, float radius, phys_t
 	}
 
 	JPH_SphereShape* shape = JPH_SphereShape_Create(radius);
-	
+
 	JPH_BodyCreationSettings* settings = JPH_BodyCreationSettings_Create3(
 		(const JPH_Shape*)shape,
 		(const JPH_RVec3*)&position,
 		(const JPH_Quat*)&rotation,
 		type,
 		layer);
-	
+
 	JPH_BodyCreationSettings_SetUserData(settings, (uint64_t)index); // Store the index on the body
 
 	JPH_BodyID bodyId = JPH_BodyInterface_CreateAndAddBody(s_pBodyInterface, settings, JPH_Activation_Activate);
@@ -238,7 +238,7 @@ physobj_t* Phys_AddCylinder(vec3_t position, quat_t rotation, float radius, floa
 	}
 
 	JPH_CylinderShape* shape = JPH_CylinderShape_Create(height, radius);
-	
+
 	JPH_BodyCreationSettings* settings = JPH_BodyCreationSettings_Create3(
 		(const JPH_Shape*)shape,
 		(const JPH_RVec3*)&position,
@@ -279,19 +279,19 @@ physobj_t* Phys_AddCapsule(vec3_t position, quat_t rotation, float radius, float
 	}
 
 	JPH_CapsuleShape* shape = JPH_CapsuleShape_Create(height, radius);
-	
+
 	JPH_BodyCreationSettings* settings = JPH_BodyCreationSettings_Create3(
 		(const JPH_Shape*)shape,
 		(const JPH_RVec3*)&position,
-		(const JPH_Quat*)&rotation, 
+		(const JPH_Quat*)&rotation,
 		type,
 		layer);
-	
+
 	JPH_BodyCreationSettings_SetUserData(settings, (uint64_t)index); // Store the index on the body
 
 	JPH_BodyID bodyId = JPH_BodyInterface_CreateAndAddBody(s_pBodyInterface, settings, JPH_Activation_Activate);
 	JPH_BodyCreationSettings_Destroy(settings);
-	
+
 	if (bodyId == INVALID_BODYID) {
 		return NULL;
 	}
@@ -320,19 +320,19 @@ physobj_t* Phys_AddConvex(vec3_t position, quat_t rotation, const vec3_t* points
 	}
 
 	JPH_ConvexHullShapeSettings* shape = JPH_ConvexHullShapeSettings_Create((const JPH_Vec3*)points, count, JPH_DEFAULT_CONVEX_RADIUS);
-	
+
 	JPH_BodyCreationSettings* settings = JPH_BodyCreationSettings_Create3(
 		(const JPH_Shape*)shape,
 		(const JPH_RVec3*)&position,
 		(const JPH_Quat*)&rotation,
 		type,
 		layer);
-	
+
 	JPH_BodyCreationSettings_SetUserData(settings, (uint64_t)index); // Store the index on the body
 
 	JPH_BodyID bodyId = JPH_BodyInterface_CreateAndAddBody(s_pBodyInterface, settings, JPH_Activation_Activate);
 	JPH_BodyCreationSettings_Destroy(settings);
-	
+
 	if (bodyId == INVALID_BODYID) {
 		return NULL;
 	}

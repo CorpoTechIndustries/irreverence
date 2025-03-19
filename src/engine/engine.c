@@ -128,7 +128,7 @@ int Engine_Run(int argc, const char** argv)
 
 	Mat4_Translate(&snickInstance.model, NEW_VEC3(2.0f, 1.5f, -2.0f));
 	Mat4_Scale(&snickInstance.model, NEW_VEC3S(0.2f));
-	
+
 	shader_t testShader;
 	Shader_InitRaster(&testShader, "Sigma", "assets/shaders/test.vert", "assets/shaders/test.frag");
 
@@ -201,6 +201,8 @@ int Engine_Run(int argc, const char** argv)
 	Mat4_Scale(&floorInstance.model, NEW_VEC3(10.0f, 1.0f, 10.0f));
 
 	float hi = 0.5f;
+	float nextTick = 0.0f;
+	float tickRate = 1.0f/60.0f;
 	while (!glfwWindowShouldClose(window)) {
 		IN_Update();
 
@@ -210,7 +212,11 @@ int Engine_Run(int argc, const char** argv)
 		curTime = (float)glfwGetTime();
 		frameTime = curTime - prevTime;
 
-		Phys_Update();
+		if (nextTick < curTime) {
+			Phys_Update(frameTime);
+
+			nextTick = curTime + tickRate;
+		}
 
 		R_DebugMoveUpdate();
 
@@ -218,7 +224,7 @@ int Engine_Run(int argc, const char** argv)
 
 		if (IN_IsKeyPressed(GLFW_KEY_P)) {
 			Snd_PlayStream(&stream);
-			
+
 			if (lid1 != UINT32_MAX) {
 				Light_RemoveSpotlight(lid1);
 				lid1 = UINT32_MAX;
@@ -230,9 +236,9 @@ int Engine_Run(int argc, const char** argv)
 				.brightness = 0.25f,
 				.radius = 100.0f
 			};
-			
+
 			Light_AddPointlight(&christParams);
-			
+
 			christParams.position = NEW_VEC3(3.0f, 2.0f, -1.0f);
 			christParams.color = NEW_VEC3(0.0f, 1.0f, 0.0f);
 			Light_AddPointlight(&christParams);
@@ -256,7 +262,7 @@ int Engine_Run(int argc, const char** argv)
 		coobeInstance.model = MAT4_IDENTITY;
 		Mat4_Translate(&coobeInstance.model, coobe->position);
 		Mat4_Scale(&coobeInstance.model, NEW_VEC3S(0.5f));
-		
+
 		float coobeAngle = 0.0f;
 		vec3_t coobeAxis = VEC3_ZERO;
 		Quat_GetAxisAngle(&coobe->rotation, &coobeAngle, &coobeAxis);

@@ -56,9 +56,9 @@ bool Snd_LoadWavFromMemory(sound_file_t* file, const void* data, size_t size)
 
 	Buffer_Read(&buffer, &riff, sizeof(riff));
 
-	riff = Endian_CPUToLittle32(riff);
+	riff = Endian_HostToLittle32(riff);
 
-	if (riff != Endian_CPUToLittle32(*(uint32_t*)WAV_MASTER_RIFF)) {
+	if (riff != Endian_HostToLittle32(*(uint32_t*)WAV_MASTER_RIFF)) {
 		return false;
 	}
 
@@ -68,9 +68,9 @@ bool Snd_LoadWavFromMemory(sound_file_t* file, const void* data, size_t size)
 
 	Buffer_Read(&buffer, &wave, sizeof(wave));
 
-	wave = Endian_CPUToLittle32(wave);
+	wave = Endian_HostToLittle32(wave);
 
-	if (wave != Endian_CPUToLittle32(wave)) {
+	if (wave != Endian_HostToLittle32(wave)) {
 		return false;
 	}
 

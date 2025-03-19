@@ -26,7 +26,7 @@ typedef enum {
 	PHYS_SHAPE_SPHERE,
 	PHYS_SHAPE_CYLINDER,
 	PHYS_SHAPE_CAPSULE,
-	PHYS_SHAPE_CONVEX 
+	PHYS_SHAPE_CONVEX
 } phys_shape_t;
 
 typedef struct {
@@ -47,7 +47,7 @@ typedef struct {
 bool Phys_Init();
 void Phys_Destroy();
 
-void Phys_Update();
+void Phys_Update(float tickRate);
 
 physobj_t* Phys_AddCube(vec3_t position, quat_t rotation, vec3_t size, phys_type_t type, phys_layer_t layer);
 physobj_t* Phys_AddSphere(vec3_t position, quat_t rotation, float radius, phys_type_t type, phys_layer_t layer);

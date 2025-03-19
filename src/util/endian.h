@@ -8,20 +8,34 @@ uint64_t Endian_SwapUInt64(uint64_t value);
 
 #if CPU_BIG_ENDIAN
 
-#define Endian_CPUToBig16(__val) (__val)
-#define Endian_CPUToBig32(__val) (__val)
-#define Endian_CPUToBig64(__val) (__val)
-#define Endian_CPUToLittle16(__val) Endian_SwapUInt16(__val)
-#define Endian_CPUToLittle32(__val) Endian_SwapUInt32(__val)
-#define Endian_CPUToLittle64(__val) Endian_SwapUInt64(__val)
+#define Endian_HostToBig16(__val) (__val)
+#define Endian_HostToBig32(__val) (__val)
+#define Endian_HostToBig64(__val) (__val)
+#define Endian_HostToLittle16(__val) Endian_SwapUInt16(__val)
+#define Endian_HostToLittle32(__val) Endian_SwapUInt32(__val)
+#define Endian_HostToLittle64(__val) Endian_SwapUInt64(__val)
+
+#define Endian_BigToHost16(__val) (__val)
+#define Endian_BigToHost32(__val) (__val)
+#define Endian_BigToHost64(__val) (__val)
+#define Endian_LittleToHost16(__val) Endian_SwapUInt16(__val)
+#define Endian_LittleToHost32(__val) Endian_SwapUInt32(__val)
+#define Endian_LittleToHost64(__val) Endian_SwapUInt64(__val)
 
 #else
 
-#define Endian_CPUToBig16(__val) Endian_SwapUInt16(__val)
-#define Endian_CPUToBig32(__val) Endian_SwapUInt32(__val)
-#define Endian_CPUToBig64(__val) Endian_SwapUInt64(__val)
-#define Endian_CPUToLittle16(__val) (__val)
-#define Endian_CPUToLittle32(__val) (__val)
-#define Endian_CPUToLittle64(__val) (__val)
+#define Endian_HostToBig16(__val) Endian_SwapUInt16(__val)
+#define Endian_HostToBig32(__val) Endian_SwapUInt32(__val)
+#define Endian_HostToBig64(__val) Endian_SwapUInt64(__val)
+#define Endian_HostToLittle16(__val) (__val)
+#define Endian_HostToLittle32(__val) (__val)
+#define Endian_HostToLittle64(__val) (__val)
+
+#define Endian_BigToHost16(__val) Endian_SwapUInt16(__val)
+#define Endian_BigToHost32(__val) Endian_SwapUInt32(__val)
+#define Endian_BigToHost64(__val) Endian_SwapUInt64(__val)
+#define Endian_LittleToHost16(__val) (__val)
+#define Endian_LittleToHost32(__val) (__val)
+#define Endian_LittleToHost64(__val) (__val)
 
 #endif

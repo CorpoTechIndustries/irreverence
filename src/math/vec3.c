@@ -29,6 +29,14 @@ vec3_t Vec3_Mul(vec3_t v1, vec3_t v2)
 	return v3;
 }
 
+vec3_t Vec3_Muls(vec3_t v, vec_t scale)
+{
+	vec3_t dest;
+	glm_vec3_mul(v.v, NEW_VEC3S(scale).v, dest.v);
+
+	return dest;
+}
+
 vec3_t Vec3_Div(vec3_t v1, vec3_t v2)
 {
 	vec3_t v3;
@@ -50,6 +58,11 @@ void Vec3_SubTo(vec3_t v1, vec3_t v2, vec3_t* dest)
 void Vec3_MulTo(vec3_t v1, vec3_t v2, vec3_t* dest)
 {
 	glm_vec3_mul(v1.v, v2.v, dest->v);
+}
+
+void Vec3_MulsTo(vec3_t v, vec_t scale, vec3_t* dest)
+{
+	glm_vec3_mul(v.v, NEW_VEC3S(scale).v, dest->v);
 }
 
 void Vec3_DivTo(vec3_t v1, vec3_t v2, vec3_t* dest)
