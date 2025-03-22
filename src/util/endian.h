@@ -2,6 +2,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 uint16_t Endian_SwapUInt16(uint16_t value);
 uint32_t Endian_SwapUInt32(uint32_t value);
 uint64_t Endian_SwapUInt64(uint64_t value);
@@ -38,4 +42,8 @@ uint64_t Endian_SwapUInt64(uint64_t value);
 #define Endian_LittleToHost32(__val) (__val)
 #define Endian_LittleToHost64(__val) (__val)
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

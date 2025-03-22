@@ -4,6 +4,10 @@
 
 #include <math/vec3.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define QUAT_IDENTITY (quat_t){ 0.0f, 0.0f, 0.0f, 1.0f }
 
 #define NEW_QUAT(x, y, z, w) (quat_t){ x, y, z, w }
@@ -30,3 +34,7 @@ void Quat_DivTo(quat_t v1, quat_t v2, quat_t* dest);
 void Quat_AxisAngle(float angle, vec3_t axis, quat_t* dest);
 
 void Quat_GetAxisAngle(quat_t* quat, float* angle, vec3_t* axis);
+
+#ifdef __cplusplus
+}
+#endif

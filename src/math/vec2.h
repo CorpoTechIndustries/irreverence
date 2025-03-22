@@ -2,6 +2,10 @@
 
 #include <math/common.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define VEC2_ZERO (vec2_t){ 0.0f, 0.0f }
 #define IVEC2_ZERO (ivec2_t){ 0, 0 }
 
@@ -47,3 +51,7 @@ void IVec2_Mul(ivec2_t v1, ivec2_t v2, ivec2_t* dest);
 void IVec2_Div(ivec2_t v1, ivec2_t v2, ivec2_t* dest);
 
 int IVec2_Dot(ivec2_t v1, ivec2_t v2);
+
+#ifdef __cplusplus
+}
+#endif

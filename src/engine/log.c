@@ -17,6 +17,11 @@ static void default_cb(log_level_t level, const char* fmt, va_list args)
 
 static log_callback_t s_pLogCallback = default_cb;
 
+void Log_Messagev(log_level_t level, const char* fmt, va_list args)
+{
+	s_pLogCallback(level, fmt, args);
+}
+
 void Log_Message(log_level_t level, const char* fmt, ...)
 {
 	va_list args;

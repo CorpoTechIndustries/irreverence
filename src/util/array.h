@@ -1,6 +1,11 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef void* array_t;
 
@@ -20,6 +25,7 @@ size_t Array_Stride(array_t array);
 size_t Array_Size(array_t array);
 size_t Array_Count(array_t array);
 array_t Array_Resize(array_t array, size_t size);
+void* Array_Offset(array_t array, size_t offset);
 void Array_Copy(array_t src, array_t dst, size_t count);
 
 array_t Array_PushData(array_t array, const void* data);
@@ -43,3 +49,7 @@ do { Array_GetData(__arr, __ind, &__var); } while(0)
 typedef void(*array_iterator_t)(size_t index, void* value);
 void Array_Iterate(array_t array, array_iterator_t fn);
 void Array_IterateCount(array_t array, array_iterator_t fn);
+
+#ifdef __cplusplus
+}
+#endif

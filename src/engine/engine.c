@@ -17,8 +17,12 @@
 #include <engine/physics/physics.h>
 #include <engine/log.h>
 #include <engine/input.h>
+#include <engine/edict.h>
 
 #include <platform/sys.h>
+#include <platform/lib.h>
+
+#include <public/engine.h>
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -53,6 +57,9 @@ static float curTime = 0.0f;
 static float prevTime = 0.0f;
 static float frameTime = 0.0f;
 
+game_exports_t g_GameExports = { 0 };
+dll_t g_GameDLL = NULL;
+
 void Engine_ResetTime()
 {
 	prevTime = curTime = startTime = (float)glfwGetTime();
@@ -67,6 +74,9 @@ float Engine_FrameTime()
 {
 	return frameTime;
 }
+
+static bool setup_game();
+static bool setup_client();
 
 int Engine_Run(int argc, const char** argv)
 {
@@ -103,6 +113,18 @@ int Engine_Run(int argc, const char** argv)
 	}
 
 	if (!Phys_Init()) {
+		return EXIT_FAILURE;
+	}
+
+	if (!ED_Init()) {
+		return EXIT_FAILURE;
+	}
+
+	if (!setup_game()) {
+		return EXIT_FAILURE;
+	}
+
+	if (!setup_client()) {
 		return EXIT_FAILURE;
 	}
 
@@ -203,6 +225,9 @@ int Engine_Run(int argc, const char** argv)
 	float hi = 0.5f;
 	float nextTick = 0.0f;
 	float tickRate = 1.0f/60.0f;
+
+	g_GameExports.pGameInit();
+
 	while (!glfwWindowShouldClose(window)) {
 		IN_Update();
 
@@ -216,6 +241,16 @@ int Engine_Run(int argc, const char** argv)
 			Phys_Update(frameTime);
 
 			nextTick = curTime + tickRate;
+		}
+
+		for (size_t i = 0; i < EDICT_MAX_COUNT; i++) {
+			edict_t* e = g_pEdicts + i;
+
+			if (e->free) {
+				continue;
+			}
+
+			g_GameExports.pThink(e);
 		}
 
 		R_DebugMoveUpdate();
@@ -276,6 +311,13 @@ int Engine_Run(int argc, const char** argv)
 		glfwSwapBuffers(window);
 	}
 
+	g_GameExports.pGameClose();
+
+	if (g_GameDLL) {
+		Sys_CloseLibrary(g_GameDLL);
+		g_GameDLL = NULL;
+	}
+
 	Snd_UnloadSound(sound);
 	Snd_DestroyStream(&stream);
 
@@ -297,4 +339,89 @@ int Engine_Run(int argc, const char** argv)
 	Sys_Close();
 
 	return EXIT_SUCCESS;
+}
+
+static void log_info_wrapper(const char* fmt, ...)
+{
+	va_list lst;
+
+	va_start(lst, fmt);
+		Log_Messagev(LOG_LEVEL_INFO, fmt, lst);
+	va_end(lst);
+}
+
+static void log_warning_wrapper(const char* fmt, ...)
+{
+	va_list lst;
+
+	va_start(lst, fmt);
+		Log_Messagev(LOG_LEVEL_WARNING, fmt, lst);
+	va_end(lst);
+}
+
+static void log_error_wrapper(const char* fmt, ...)
+{
+	va_list lst;
+
+	va_start(lst, fmt);
+		Log_Messagev(LOG_LEVEL_ERROR, fmt, lst);
+	va_end(lst);
+}
+
+static void log_fatal_wrapper(const char* fmt, ...)
+{
+	va_list lst;
+
+	va_start(lst, fmt);
+		Log_Messagev(LOG_LEVEL_FATAL, fmt, lst);
+	va_end(lst);
+}
+
+static bool setup_game()
+{
+	engine_functions_t funcs;
+
+	funcs.pMessage = log_info_wrapper;
+	funcs.pWarning = log_warning_wrapper;
+	funcs.pError = log_error_wrapper;
+	funcs.pFatal = log_fatal_wrapper;
+
+	funcs.pEdictCreate = ED_Create;
+	funcs.pEdictCreateName = ED_CreateByName;
+	funcs.pEdictGet = ED_Get;
+	funcs.pEdictFree = ED_Free;
+
+#ifdef PLATFORM_LINUX
+	const char* lib_name = "bin/game.so";
+#elif PLATFORM_WINDOWS
+	const char* lib_name = "bin/game.dll";
+#endif
+
+	g_GameDLL = Sys_OpenLibrary(lib_name);
+
+	if (!g_GameDLL) {
+		LOG_FATAL("game.so could not be opened");
+		return false;
+	}
+
+	bool(*init)(engine_functions_t* funcs, game_exports_t* exports, int engine_api_version);
+
+	init = Sys_GetProcAddress(g_GameDLL, "GameDLLInit");
+
+	if (!init) {
+		LOG_FATAL("GameDLLInit symbol could not be found");
+		return false;
+	}
+
+	if (!init(&funcs, &g_GameExports, ENGINE_INTERFACE_VERSION)) {
+		LOG_FATAL("game.so does not support engine interface version");
+		return false;
+	}
+
+	return true;
+}
+
+static bool setup_client()
+{
+	return true;
 }

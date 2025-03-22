@@ -11,6 +11,7 @@ typedef enum {
 
 typedef void(*log_callback_t)(log_level_t level, const char* fmt, va_list args);
 
+void Log_Messagev(log_level_t level, const char* fmt, va_list args);
 void Log_Message(log_level_t level, const char* fmt, ...);
 void Log_SetCallback(log_callback_t cb);
 

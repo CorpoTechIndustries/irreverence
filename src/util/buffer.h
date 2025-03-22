@@ -3,6 +3,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
 	size_t size;
 	size_t pos;
@@ -27,3 +31,7 @@ void Buffer_WriteUInt16(buffer_t* buffer, uint16_t value);
 void Buffer_WriteUInt32(buffer_t* buffer, uint32_t value);
 void Buffer_WriteUInt64(buffer_t* buffer, uint64_t value);
 void Buffer_WriteFloat(buffer_t* buffer, float value);
+
+#ifdef __cplusplus
+}
+#endif

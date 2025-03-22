@@ -65,6 +65,15 @@ array_t Array_Resize(array_t array, size_t size)
 	return (array_t)ptr;
 }
 
+void* Array_Offset(array_t array, size_t offset)
+{
+	size_t stride = Array_Stride(array);
+
+	char* ptr = (char*)array;
+
+	return ptr + (stride * offset);
+}
+
 array_t Array_PushData(array_t array, const void* data)
 {
 	struct array_header_t* header = get_header(array);
