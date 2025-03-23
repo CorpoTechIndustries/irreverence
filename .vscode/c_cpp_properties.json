@@ -1,6 +1,22 @@
 {
     "configurations": [
         {
+            "name": "Linux - Dedicated",
+            "includePath": [
+                "${workspaceFolder}/src/**",
+				"${workspaceFolder}/vendor/cglm/include",
+				"${workspaceFolder}/vendor/joltc/include",
+				"${workspaceFolder}/vendor/stb"
+            ],
+            "defines": ["__USE_MISC", "PLATFORM_LINUX", "ENGINE_DEDICATED"],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64",
+            "configurationProvider": "go2sh.cmake-integration"
+        },
+
+		{
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/src/**",

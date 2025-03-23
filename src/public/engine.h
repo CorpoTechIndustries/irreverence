@@ -33,6 +33,8 @@ typedef struct {
 	void(*pTouch)(edict_t* touched, edict_t* ent);
 } game_exports_t;
 
+typedef bool(*game_init_fn_t)(engine_functions_t* funcs, game_exports_t* exports, int version);
+
 #ifdef __cplusplus
 }
 #endif

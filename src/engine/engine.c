@@ -60,6 +60,11 @@ static float frameTime = 0.0f;
 game_exports_t g_GameExports = { 0 };
 dll_t g_GameDLL = NULL;
 
+#ifndef ENGINE_DEDICATED
+client_exports_t g_ClientExports = { 0 };
+dll_t g_ClientDLL = NULL;
+#endif
+
 void Engine_ResetTime()
 {
 	prevTime = curTime = startTime = (float)glfwGetTime();
@@ -76,7 +81,10 @@ float Engine_FrameTime()
 }
 
 static bool setup_game();
+
+#ifndef ENGINE_DEDICATED
 static bool setup_client();
+#endif
 
 int Engine_Run(int argc, const char** argv)
 {
@@ -124,9 +132,13 @@ int Engine_Run(int argc, const char** argv)
 		return EXIT_FAILURE;
 	}
 
+	#ifndef ENGINE_DEDICATED
+
 	if (!setup_client()) {
 		return EXIT_FAILURE;
 	}
+
+	#endif
 
 	R_WindowUpdate(1280, 720); // NOTE: "De-Hardcode" it
 
@@ -318,6 +330,17 @@ int Engine_Run(int argc, const char** argv)
 		g_GameDLL = NULL;
 	}
 
+	#ifndef ENGINE_DEDICATED
+
+	g_ClientExports.pClose();
+
+	if (g_ClientDLL) {
+		Sys_CloseLibrary(g_ClientDLL);
+		g_ClientDLL = NULL;
+	}
+
+	#endif
+
 	Snd_UnloadSound(sound);
 	Snd_DestroyStream(&stream);
 
@@ -400,13 +423,11 @@ static bool setup_game()
 	g_GameDLL = Sys_OpenLibrary(lib_name);
 
 	if (!g_GameDLL) {
-		LOG_FATAL("game.so could not be opened");
+		LOG_FATAL("game lib could not be opened");
 		return false;
 	}
 
-	bool(*init)(engine_functions_t* funcs, game_exports_t* exports, int engine_api_version);
-
-	init = Sys_GetProcAddress(g_GameDLL, "GameDLLInit");
+	game_init_fn_t init = Sys_GetProcAddress(g_GameDLL, "GameDLLInit");
 
 	if (!init) {
 		LOG_FATAL("GameDLLInit symbol could not be found");
@@ -414,14 +435,50 @@ static bool setup_game()
 	}
 
 	if (!init(&funcs, &g_GameExports, ENGINE_INTERFACE_VERSION)) {
-		LOG_FATAL("game.so does not support engine interface version");
+		LOG_FATAL("game lib does not support engine interface version");
 		return false;
 	}
 
 	return true;
 }
 
+#ifndef ENGINE_DEDICATED
+
 static bool setup_client()
 {
+	client_functions_t funcs;
+
+	funcs.pMessage = log_info_wrapper;
+	funcs.pWarning = log_warning_wrapper;
+	funcs.pError = log_error_wrapper;
+	funcs.pFatal = log_fatal_wrapper;
+
+#ifdef PLATFORM_LINUX
+	const char* lib_name = "bin/client.so";
+#elif PLATFORM_WINDOWS
+	const char* lib_name = "bin/client.dll";
+#endif
+
+	g_ClientDLL = Sys_OpenLibrary(lib_name);
+
+	if (!g_ClientDLL) {
+		LOG_FATAL("client library could not be opened!");
+		return false;
+	}
+
+	client_init_fn_t init = Sys_GetProcAddress(g_ClientDLL, "ClientInit");
+
+	if (!init) {
+		LOG_FATAL("ClientInit symbol could not be found");
+		return false;
+	}
+
+	if (!init(&funcs, &g_ClientExports, CLIENT_INTERFACE_VERSION)) {
+		LOG_FATAL("client lib does not support client interface version");
+		return false;
+	}
+
 	return true;
 }
+
+#endif

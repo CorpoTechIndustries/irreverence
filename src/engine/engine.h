@@ -11,3 +11,12 @@ float Engine_FrameTime();
 
 extern game_exports_t g_GameExports;
 extern dll_t g_GameDLL;
+
+#ifndef ENGINE_DEDICATED
+
+#include <public/cl_dll.h>
+
+extern client_exports_t g_ClientExports;
+extern dll_t g_ClientDLL;
+
+#endif
