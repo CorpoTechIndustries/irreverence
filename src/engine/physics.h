@@ -7,33 +7,35 @@
 #include <stdbool.h>
 
 #define MAX_PHYSICS_OBJECTS 65535
-
 #define INVALID_BODYID UINT32_MAX
 
-typedef enum {
-	PHYS_LAYER_NONMOVING,
-	PHYS_LAYER_MOVING
-} phys_layer_t;
-
-typedef enum {
-	PHYS_TYPE_STATIC,
-	PHYS_TYPE_KINEMATIC,
-	PHYS_TYPE_DYNAMIC
-} phys_type_t;
-
-typedef enum {
+enum {
 	PHYS_SHAPE_CUBE,
 	PHYS_SHAPE_SPHERE,
 	PHYS_SHAPE_CYLINDER,
 	PHYS_SHAPE_CAPSULE,
 	PHYS_SHAPE_CONVEX
-} phys_shape_t;
+};
+typedef uint8_t phys_shape_t;
+
+enum {
+	PHYS_LAYER_NONMOVING,
+	PHYS_LAYER_MOVING
+};
+typedef uint8_t phys_layer_t;
+
+enum {
+	PHYS_TYPE_STATIC,
+	PHYS_TYPE_KINEMATIC,
+	PHYS_TYPE_DYNAMIC
+};
+typedef uint8_t phys_type_t;
 
 typedef struct {
 	uint32_t bodyId;
 	uint16_t index;
-	uint8_t shape;
-	uint8_t layer;
+	phys_shape_t shape;
+	phys_layer_t layer;
 	uint32_t flags;
 
 	vec3_t position;
@@ -47,7 +49,7 @@ typedef struct {
 bool Phys_Init();
 void Phys_Destroy();
 
-void Phys_Update(float tickRate);
+void Phys_Update();
 
 physobj_t* Phys_AddCube(vec3_t position, quat_t rotation, vec3_t size, phys_type_t type, phys_layer_t layer);
 physobj_t* Phys_AddSphere(vec3_t position, quat_t rotation, float radius, phys_type_t type, phys_layer_t layer);

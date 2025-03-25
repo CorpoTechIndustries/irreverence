@@ -65,6 +65,14 @@ array_t Array_Resize(array_t array, size_t size)
 	return (array_t)ptr;
 }
 
+void Array_Clear(array_t array)
+{
+	struct array_header_t* header = get_header(array);
+	header->count = 0;
+	
+	Sys_MemZero(array, header->size);
+}
+
 void* Array_Offset(array_t array, size_t offset)
 {
 	size_t stride = Array_Stride(array);

@@ -25,6 +25,7 @@ size_t Array_Stride(array_t array);
 size_t Array_Size(array_t array);
 size_t Array_Count(array_t array);
 array_t Array_Resize(array_t array, size_t size);
+void Array_Clear(array_t array);
 void* Array_Offset(array_t array, size_t offset);
 void Array_Copy(array_t src, array_t dst, size_t count);
 

@@ -28,11 +28,21 @@ typedef struct {
 	uint32_t ebo;
 	uint32_t vertexCount;
 	uint32_t indexCount;
+	
+	struct {
+		uint32_t stride;
+		uint32_t count;
+		uint32_t capacity;
+		uint8_t* array;
+	} instances;
 } mesh_t;
 
 bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t vertex_count, const uint32_t* indices, uint32_t index_count);
 bool Mesh_InitSkybox(mesh_t* mesh, const mesh_vertexsky_t* vertices, uint32_t vertex_count);
 void Mesh_Destroy(mesh_t* mesh);
 
-void Mesh_DrawModel(mesh_t* mesh, const mesh_instancemodel_t* instance);
-void Mesh_DrawSkybox(mesh_t* mesh);
+void Mesh_AddInstance(mesh_t* mesh, const void* data);
+void Mesh_ClearInstances(mesh_t* mesh);
+
+void Mesh_Draw(mesh_t* mesh, const void* data);
+void Mesh_DrawInstances(mesh_t* mesh);

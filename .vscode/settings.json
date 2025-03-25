@@ -49,7 +49,11 @@
         "string.h": "c",
         "bitset.h": "c",
         "lighting.h": "c",
-        "__config": "c"
+        "__config": "c",
+        "array.h": "c",
+        "memory.h": "c",
+        "random": "c",
+        "sort.h": "c"
     },
     "editor.insertSpaces": false,
 	"files.insertFinalNewline": true

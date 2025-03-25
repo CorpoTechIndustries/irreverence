@@ -2,6 +2,8 @@
 
 #include <engine/log.h>
 
+#include <platform/memory.h>
+
 #include <stddef.h>
 
 #include <GL/glew.h>
@@ -20,6 +22,11 @@ bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t v
 
 	mesh->vertexCount = vertex_count;
 	mesh->indexCount = index_count;
+
+	mesh->instances.array = NULL;
+	mesh->instances.stride = sizeof(mesh_instancemodel_t);
+	mesh->instances.count = 0;
+	mesh->instances.capacity = 0;
 	
 	size_t vertexSize = vertex_count * sizeof(mesh_vertexmodel_t);
 	size_t indexSize = index_count * sizeof(uint32_t);
@@ -88,20 +95,70 @@ void Mesh_Destroy(mesh_t* mesh)
 	glDeleteBuffers(1, &mesh->vbo);
 	glDeleteBuffers(1, &mesh->ebo);
 	glDeleteBuffers(1, &mesh->ibo);
+
+	if (mesh->instances.array) {
+		Sys_Free(mesh->instances.array);
+		mesh->instances.array = NULL;
+	}
 }
 
-void Mesh_DrawModel(mesh_t* mesh, const mesh_instancemodel_t* instance)
+void Mesh_AddInstance(mesh_t* mesh, const void* data)
 {
-	glNamedBufferData(mesh->ibo, sizeof(mesh_instancemodel_t), instance, GL_DYNAMIC_DRAW);
+	if (mesh->instances.stride == 0) {
+		return;
+	} 
 
-	glBindVertexArray(mesh->id);
-	glDrawElements(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
+	if (!mesh->instances.array) {
+		mesh->instances.array = Sys_Calloc(mesh->instances.stride);
+		mesh->instances.capacity = 1;
+	}
+
+	if (mesh->instances.count >= mesh->instances.capacity) {
+		mesh->instances.capacity *= 2;
+		mesh->instances.array = Sys_ReAlloc(mesh->instances.array, mesh->instances.capacity * mesh->instances.stride);
+	}
+
+	uint8_t* data_c = (uint8_t*)data;
+	uint8_t* instance_c = mesh->instances.array + mesh->instances.count * mesh->instances.stride;
+	for (uint32_t i = 0; i < mesh->instances.stride; i++) {
+		instance_c[i] = data_c[i];
+	}
+
+	mesh->instances.count++;
 }
 
-void Mesh_DrawSkybox(mesh_t* mesh)
+void Mesh_ClearInstances(mesh_t* mesh)
 {
-	glBindVertexArray(mesh->id);
-	glDrawArrays(GL_TRIANGLES, 0, mesh->vertexCount);
-	glBindVertexArray(0);
+	// Yea, this is all it does. We don't need to memset because the data will be overriden either way.
+	mesh->instances.count = 0;
+}
+
+void Mesh_Draw(mesh_t* mesh, const void* data)
+{
+	glNamedBufferData(mesh->ibo, mesh->instances.stride, data, GL_DYNAMIC_DRAW);
+
+	if (mesh->ebo) {
+		glBindVertexArray(mesh->id);
+		glDrawElements(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+	} else {
+		glBindVertexArray(mesh->id);
+		glDrawArrays(GL_TRIANGLES, 0, mesh->vertexCount);
+		glBindVertexArray(0);
+	}
+}
+
+void Mesh_DrawInstances(mesh_t* mesh)
+{
+	glNamedBufferData(mesh->ibo, mesh->instances.stride * mesh->instances.count, mesh->instances.array, GL_DYNAMIC_DRAW);
+
+	if (mesh->ebo) {
+		glBindVertexArray(mesh->id);
+		glDrawElementsInstanced(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, NULL, mesh->instances.count);
+		glBindVertexArray(0);
+	} else {
+		glBindVertexArray(mesh->id);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, mesh->vertexCount, mesh->instances.count);
+		glBindVertexArray(0);
+	}
 }

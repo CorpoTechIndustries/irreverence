@@ -5,18 +5,20 @@
 #include <engine/renderer/uniform.h>
 #include <engine/log.h>
 #include <engine/input.h>
+#include <engine/engine.h>
 
 #include <math/mat4.h>
 
 #include <platform/memory.h>
+
+#include <util/array.h>
+#include <util/sort.h>
 
 #include <string.h>
 #include <math.h>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-
-#include <engine/engine.h>
 
 static void glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
 {

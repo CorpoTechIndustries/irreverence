@@ -14,7 +14,7 @@
 #include <engine/renderer/model.h>
 #include <engine/renderer/texture.h>
 #include <engine/renderer/framebuffer.h>
-#include <engine/physics/physics.h>
+#include <engine/physics.h>
 #include <engine/log.h>
 #include <engine/input.h>
 #include <engine/edict.h>
@@ -142,26 +142,7 @@ int Engine_Run(int argc, const char** argv)
 
 	R_WindowUpdate(1280, 720); // NOTE: "De-Hardcode" it
 
-	mesh_vertexmodel_t triVertices[] = {
-		{ 0.0f, 0.5f, 0.0f,		1.0f, 0.0f, 0.0f,	0.5f, 1.0f },
-		{ 0.5f, -0.5f, 0.0f,	0.0f, 1.0f, 0.0f,	1.0f, 0.0f },
-		{ -0.5f, -0.5f, 0.0f,	0.0f, 0.0f, 1.0f,	0.0f, 0.0f }
-	};
-	uint32_t triIndices[] = { 0, 1, 2 };
-
-	mesh_t triMesh;
-	Mesh_InitModel(&triMesh, triVertices, sizeof(triVertices) / sizeof(mesh_vertexmodel_t), triIndices, sizeof(triIndices) / sizeof(uint32_t));
-
-	mesh_instancemodel_t snickInstance = {
-		.r = 0.9f,
-		.g = 0.9f,
-		.b = 0.9f,
-		.a = 1.0f,
-		.model = MAT4_IDENTITY
-	};
-
-	Mat4_Translate(&snickInstance.model, NEW_VEC3(2.0f, 1.5f, -2.0f));
-	Mat4_Scale(&snickInstance.model, NEW_VEC3S(0.2f));
+	IN_Init();
 
 	shader_t testShader;
 	Shader_InitRaster(&testShader, "Sigma", "assets/shaders/test.vert", "assets/shaders/test.frag");
@@ -174,8 +155,6 @@ int Engine_Run(int argc, const char** argv)
 	};
 	framebuffer_t testFramebuffer;
 	Framebuffer_Init(&testFramebuffer, 1280, 720, 0, testAttachments, 1, NULL);
-
-	IN_Init();
 
 	sound_file_t soundFile;
 
@@ -193,8 +172,6 @@ int Engine_Run(int argc, const char** argv)
 
 	Snd_SetStreamSound(&stream, sound);
 
-	model_t testModel;
-	Model_Init(&testModel, "assets/models/snickerer.obj");
 	spotlight_data_t lightParams = {
 		.position = NEW_VEC3(0.0f, 5.0f, -1.0f),
 		.direction = NEW_VEC3(0.0f, -1.0f, 0.0f),
@@ -203,36 +180,27 @@ int Engine_Run(int argc, const char** argv)
 		.outerCutoff = 60.0f,
 		.brightness = 0.5f
 	};
-
 	uint32_t lid1 = Light_AddSpotlight(&lightParams);
-
-	lightParams.color = NEW_VEC3(1.0f, 0.0f, 0.0f);
-
+	
 	g_View.position = NEW_VEC3(0.0f, 2.0f, 0.0f);
 
+	model_t snickModel;
+	Model_Init(&snickModel, "assets/models/snickerer.obj");
+	mesh_instancemodel_t snickInstance = {
+		.r = 0.9f,
+		.g = 0.9f,
+		.b = 0.9f,
+		.a = 1.0f,
+		.model = MAT4_IDENTITY
+	};
+	Mat4_Translate(&snickInstance.model, NEW_VEC3(2.0f, 1.5f, -2.0f));
+	Mat4_Scale(&snickInstance.model, NEW_VEC3S(0.2f));
 
 	quat_t coobeStartQuat = QUAT_IDENTITY;
 	Quat_AxisAngle(45.0f, NEW_VEC3S(1.0f), &coobeStartQuat);
-
 	physobj_t* coobe = Phys_AddCube(NEW_VEC3(-2.0f, 20.0f, -3.0f), coobeStartQuat, NEW_VEC3S(0.5f), PHYS_TYPE_DYNAMIC, PHYS_LAYER_MOVING);
-	mesh_instancemodel_t coobeInstance = {
-		.r = 1.0f,
-		.g = 0.5f,
-		.b = 0.5f,
-		.a = 1.0f,
-		.model = MAT4_IDENTITY
-	};
 
 	physobj_t* floor = Phys_AddCube(NEW_VEC3(0.0f, -1.0f, 0.0f), QUAT_IDENTITY, NEW_VEC3(10.0f, 1.0f, 10.0f), PHYS_TYPE_STATIC, PHYS_LAYER_NONMOVING);
-	mesh_instancemodel_t floorInstance = {
-		.r = 0.75f,
-		.g = 0.75f,
-		.b = 0.75f,
-		.a = 1.0f,
-		.model = MAT4_IDENTITY
-	};
-	Mat4_Translate(&floorInstance.model, NEW_VEC3(0.0f, -1.0f, 0.0f));
-	Mat4_Scale(&floorInstance.model, NEW_VEC3(10.0f, 1.0f, 10.0f));
 
 	float hi = 0.5f;
 	float nextTick = 0.0f;
@@ -250,11 +218,10 @@ int Engine_Run(int argc, const char** argv)
 		frameTime = curTime - prevTime;
 
 		if (nextTick < curTime) {
-			Phys_Update(frameTime);
-
+			Phys_Update();
 			nextTick = curTime + tickRate;
 		}
-
+		
 		for (size_t i = 0; i < EDICT_MAX_COUNT; i++) {
 			edict_t* e = g_pEdicts + i;
 
@@ -302,10 +269,24 @@ int Engine_Run(int argc, const char** argv)
 
 		Shader_Bind(&testShader);
 		Texture_Bind(R_GetWhiteTexture(), 0);
-		Mesh_DrawModel(R_GetCubeMesh(), &floorInstance);
 
-		Model_Draw(&testModel, &snickInstance, 0);
+		mesh_instancemodel_t floorInstance = {
+			.r = 0.75f,
+			.g = 0.75f,
+			.b = 0.75f,
+			.a = 1.0f,
+		};
+		floorInstance.model = MAT4_IDENTITY;
+		Mat4_Translate(&floorInstance.model, NEW_VEC3(0.0f, -1.0f, 0.0f));
+		Mat4_Scale(&floorInstance.model, NEW_VEC3(10.0f, 1.0f, 10.0f));
+		Mesh_AddInstance(R_GetCubeMesh(), &floorInstance);
 
+		mesh_instancemodel_t coobeInstance = {
+			.r = 1.0f,
+			.g = 0.5f,
+			.b = 0.5f,
+			.a = 1.0f
+		};
 		coobeInstance.model = MAT4_IDENTITY;
 		Mat4_Translate(&coobeInstance.model, coobe->position);
 		Mat4_Scale(&coobeInstance.model, NEW_VEC3S(0.5f));
@@ -314,11 +295,16 @@ int Engine_Run(int argc, const char** argv)
 		vec3_t coobeAxis = VEC3_ZERO;
 		Quat_GetAxisAngle(&coobe->rotation, &coobeAngle, &coobeAxis);
 		Mat4_Rotate(&coobeInstance.model, coobeAngle, coobeAxis);
+		Mesh_AddInstance(R_GetCubeMesh(), &coobeInstance);
 
-		Mesh_DrawModel(R_GetCubeMesh(), &coobeInstance);
+		Mesh_DrawInstances(R_GetCubeMesh());
+
+		Model_Draw(&snickModel, &snickInstance, 0);
 
 		Framebuffer_UnBind();
 		Framebuffer_CopyTo(&testFramebuffer, NULL, false);
+
+		Mesh_ClearInstances(R_GetCubeMesh());
 
 		glfwSwapBuffers(window);
 	}
@@ -344,11 +330,10 @@ int Engine_Run(int argc, const char** argv)
 	Snd_UnloadSound(sound);
 	Snd_DestroyStream(&stream);
 
-	Mesh_Destroy(&triMesh);
 	Shader_Destroy(&testShader);
 	Texture_Destroy(&testTexture);
 
-	Model_Destroy(&testModel);
+	Model_Destroy(&snickModel);
 	Framebuffer_Destroy(&testFramebuffer);
 
 	Phys_Destroy();

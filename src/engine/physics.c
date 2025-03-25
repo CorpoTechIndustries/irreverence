@@ -1,4 +1,4 @@
-#include <engine/physics/physics.h>
+#include <engine/physics.h>
 
 #include <engine/log.h>
 
@@ -89,7 +89,7 @@ void Phys_Destroy()
 	JPH_Shutdown();
 }
 
-void Phys_Update(float delta)
+void Phys_Update()
 {
 	const float cDelta = 1.0f / 60.0f;
 	const int cSteps = 1;
@@ -105,6 +105,7 @@ void Phys_Update(float delta)
 		}
 
 		JPH_BodyLockInterface_LockRead(s_pBodyNoLockInterface, obj->bodyId, &lockRead);
+
 		JPH_Body_GetCenterOfMassPosition((JPH_Body*)lockRead.body, (JPH_RVec3*)&obj->position);
 		JPH_Body_GetRotation((JPH_Body*)lockRead.body, (JPH_Quat*)&obj->rotation);
 		JPH_Body_GetLinearVelocity((JPH_Body*)lockRead.body, (JPH_Vec3*)&obj->velocity);

@@ -131,6 +131,7 @@ bool Model_Init(model_t* model, const char* path)
 		LOG_ERROR("Model path does not have a valid or supported extension");
 		return false;
 	}
+	
 	const struct aiScene* scene = NULL;
 	scene = aiImportFile(path, ASSIMP_LOADER_FLAG);
 
@@ -206,6 +207,6 @@ void Model_Draw(model_t* model, const mesh_instancemodel_t* instance, uint32_t s
 		mesh_t mesh;
 		Array_Get(model->meshes, i, mesh);
 
-		Mesh_DrawModel(&mesh, instance);
+		Mesh_Draw(&mesh, instance);
 	}
 }
