@@ -191,23 +191,35 @@ int Engine_Run(int argc, const char** argv)
 
 	g_View.position = NEW_VEC3(0.0f, 2.0f, 0.0f);
 
-	model_t snickModel;
-	Model_Init(&snickModel, "assets/models/snickerer.obj");
-	mesh_instancemodel_t snickInstance = {
-		.r = 0.9f,
-		.g = 0.9f,
-		.b = 0.9f,
+	model_t mapModel;
+	Model_Init(&mapModel, "assets/models/mapthing.obj");
+	mesh_instancemodel_t mapInstance = {
+		.r = 0.75f,
+		.g = 0.75f,
+		.b = 0.75f,
 		.a = 1.0f,
 		.model = MAT4_IDENTITY
 	};
-	Mat4_Translate(&snickInstance.model, NEW_VEC3(2.0f, 1.5f, -2.0f));
-	Mat4_Scale(&snickInstance.model, NEW_VEC3S(0.2f));
+	Mat4_Translate(&mapInstance.model, NEW_VEC3(0.0f, 0.0f, 0.0f));
+	Mat4_Scale(&mapInstance.model, NEW_VEC3S(0.5f));
+
+	model_t animModel;
+	Model_Init(&animModel, "assets/models/035.b3d");
+	mesh_instancemodel_t animInstance = {
+		.r = 1.0f,
+		.g = 1.0f,
+		.b = 1.0f,
+		.a = 1.0f,
+		.model = MAT4_IDENTITY
+	};
+	Mat4_Translate(&animInstance.model, NEW_VEC3(0.0f, 0.0f, 0.0f));
+	Mat4_Scale(&animInstance.model, NEW_VEC3S(0.1f));
 
 	quat_t coobeStartQuat = QUAT_IDENTITY;
 	Quat_AxisAngle(45.0f, NEW_VEC3S(1.0f), &coobeStartQuat);
 	physobj_t* coobe = Phys_AddCube(NEW_VEC3(-2.0f, 20.0f, -3.0f), coobeStartQuat, NEW_VEC3S(0.5f), PHYS_TYPE_DYNAMIC, PHYS_LAYER_MOVING);
 
-	physobj_t* floor = Phys_AddCube(NEW_VEC3(0.0f, -1.0f, 0.0f), QUAT_IDENTITY, NEW_VEC3(10.0f, 1.0f, 10.0f), PHYS_TYPE_STATIC, PHYS_LAYER_NONMOVING);
+	physobj_t* floor = Phys_AddCube(NEW_VEC3(0.0f, -4.25f, 0.0f), QUAT_IDENTITY, NEW_VEC3(100.0f, 1.0f, 100.0f), PHYS_TYPE_STATIC, PHYS_LAYER_NONMOVING);
 
 	float hi = 0.5f;
 	float nextTick = 0.0f;
@@ -314,19 +326,8 @@ int Engine_Run(int argc, const char** argv)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		Shader_Bind(&testShader);
+		
 		Texture_Bind(R_GetWhiteTexture(), 0);
-
-		mesh_instancemodel_t floorInstance = {
-			.r = 0.75f,
-			.g = 0.75f,
-			.b = 0.75f,
-			.a = 1.0f,
-		};
-		floorInstance.model = MAT4_IDENTITY;
-		Mat4_Translate(&floorInstance.model, NEW_VEC3(0.0f, -1.0f, 0.0f));
-		Mat4_Scale(&floorInstance.model, NEW_VEC3(10.0f, 1.0f, 10.0f));
-		Mesh_AddInstance(R_GetCubeMesh(), &floorInstance);
-
 		mesh_instancemodel_t coobeInstance = {
 			.r = 1.0f,
 			.g = 0.5f,
@@ -343,14 +344,17 @@ int Engine_Run(int argc, const char** argv)
 		Mat4_Rotate(&coobeInstance.model, coobeAngle, coobeAxis);
 		Mesh_AddInstance(R_GetCubeMesh(), &coobeInstance);
 
+		Model_AddInstance(&mapModel, &mapInstance);
+		Model_DrawInstances(&mapModel);
+		
+		Texture_Bind(R_GetWhiteTexture(), 0);
 		Mesh_DrawInstances(R_GetCubeMesh());
-
-		Model_Draw(&snickModel, &snickInstance, 0);
 
 		Framebuffer_UnBind();
 		Framebuffer_CopyTo(&testFramebuffer, NULL, false);
-
+		
 		Mesh_ClearInstances(R_GetCubeMesh());
+		Model_ClearInstances(&mapModel);
 
 		glfwSwapBuffers(window);
 	}
@@ -379,7 +383,8 @@ int Engine_Run(int argc, const char** argv)
 	Shader_Destroy(&testShader);
 	Texture_Destroy(&testTexture);
 
-	Model_Destroy(&snickModel);
+	Model_Destroy(&mapModel);
+	Model_Destroy(&animModel);
 	Framebuffer_Destroy(&testFramebuffer);
 
 	Net_Close();

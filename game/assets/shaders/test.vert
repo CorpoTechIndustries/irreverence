@@ -3,9 +3,11 @@
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aUV;
+layout(location = 3) in uint aBoneIds;
+layout(location = 4) in vec4 aBoneWeights;
 
-layout(location = 3) in vec4 aInstanceColor;
-layout(location = 4) in mat4 aInstanceModel;
+layout(location = 5) in vec4 aInstanceColor;
+layout(location = 6) in mat4 aInstanceModel;
 
 layout(std140, binding = 0) uniform GlobalUniform
 {

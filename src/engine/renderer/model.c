@@ -35,6 +35,14 @@ typedef struct
 	uint32_t* indices;
 } mesh_data_t;
 
+static void ConvertMat4(const struct aiMatrix4x4* mat, mat4_t* dest)
+{
+	dest->v[0] = mat->a1; dest->v[4] = mat->a2; dest->v[8] = mat->a3;  dest->v[12] = mat->a4;
+	dest->v[1] = mat->b1; dest->v[5] = mat->b2; dest->v[9] = mat->b3;  dest->v[13] = mat->b4;
+	dest->v[2] = mat->c1; dest->v[6] = mat->c2; dest->v[10] = mat->c3; dest->v[14] = mat->c4;
+	dest->v[3] = mat->d1; dest->v[7] = mat->d2; dest->v[11] = mat->d3; dest->v[15] = mat->d4;
+}
+
 static mesh_data_t ProcessMesh(const struct aiMesh* mesh)
 {
 	if (mesh->mNumVertices == 0 || mesh->mNumFaces == 0)  {
@@ -73,6 +81,16 @@ static mesh_data_t ProcessMesh(const struct aiMesh* mesh)
 			vertex.tx = 0.0f;
 		}
 
+		vertex.b1 = MAX_MODEL_BONES;
+		vertex.b2 = MAX_MODEL_BONES;
+		vertex.b3 = MAX_MODEL_BONES;
+		vertex.b4 = MAX_MODEL_BONES;
+
+		vertex.w1 = 0.0f;
+		vertex.w2 = 0.0f;
+		vertex.w3 = 0.0f;
+		vertex.w4 = 0.0f;
+
 		meshdata.vertices[i] = vertex;
 	}
 
@@ -81,6 +99,46 @@ static mesh_data_t ProcessMesh(const struct aiMesh* mesh)
 		for (uint32_t j = 0; j < face->mNumIndices; j++) {
 			meshdata.indices[i * face->mNumIndices + j] = face->mIndices[j];
 		}
+	}
+
+	for (uint8_t j = 0; j < mesh->mNumBones; j++) {
+		struct aiBone* bone = mesh->mBones[j];
+
+		bone_info_t* boneInfo = &s_pModel->bones.infos[s_pModel->bones.count];
+		boneInfo->id = s_pModel->bones.count++;
+		ConvertMat4(&bone->mOffsetMatrix, &boneInfo->offset);
+
+		// LearnOpenGL uses a hashmap and a name check here to remove duplicates.. but why the fuck would there be duplicates?
+		// Using a hashmap will be extremely slow, besides, duplicate bones should be the problem of the model and its' format.
+
+		if (boneInfo->id == MAX_MODEL_BONES) {
+			LOG_ERROR("Couldn't get Bone Id from model \"%s\" at bone \"%s\"", s_pModelPath, bone->mName.data);
+			return (mesh_data_t){ false };
+		}
+		
+		struct aiVertexWeight* weights = bone->mWeights;
+		for (uint32_t k = 0; k < bone->mNumWeights; k++) {
+			uint32_t vertexId = weights[k].mVertexId;
+			float weight = weights[k].mWeight;
+
+			if (vertexId >= mesh->mNumVertices) {
+				LOG_ERROR("Bone Vertex Id is greater than the amount of vertices..?");
+				return (mesh_data_t){ false };
+			}
+
+			mesh_vertexmodel_t* boneWVertex = &meshdata.vertices[vertexId];
+			uint8_t* vertexBoneIds = &boneWVertex->b1;
+			float* vertexBoneWeights = &boneWVertex->w1;
+			for (uint8_t l = 0; l < MAX_MODEL_WEIGHT; l++) { 
+				if (vertexBoneIds[l] == MAX_MODEL_BONES) {
+					vertexBoneIds[l] = boneInfo->id;
+					vertexBoneWeights[l] = weight;
+					break;
+				}
+			}
+		}
+		
+		LOG_INFO("Bone \"%s\", %i", bone->mName.data, boneInfo->id);
 	}
 
 	return meshdata;
@@ -107,6 +165,14 @@ static void RecursiveProcessNode(const struct aiScene* scene, const struct aiNod
 		} else {
 			LOG_ERROR("An error occurred while loading Model \"%s\" when processing node named \"%s\"", s_pModelPath, node->mName.data);
 			Model_Destroy(s_pModel);
+
+			if (meshdata.vertices) {
+				Array_Destroy(meshdata.vertices);
+			}
+
+			if (meshdata.indices) {
+				Array_Destroy(meshdata.indices);
+			}
 
 			s_bSuccess = false;
 
@@ -198,15 +264,42 @@ void Model_Destroy(model_t* model)
 	}
 }
 
+void Model_AddInstance(model_t* model, const mesh_instancemodel_t* instance)
+{
+	if (!model->meshes) return;
+	
+	uint32_t meshCount = (uint32_t)Array_Count(model->meshes);
+	for (uint32_t i = 0; i < meshCount; i++) {
+		Mesh_AddInstance(&model->meshes[i], instance);
+	}
+}
+
+void Model_ClearInstances(model_t* model)
+{
+	if (!model->meshes) return;
+	
+	uint32_t meshCount = (uint32_t)Array_Count(model->meshes);
+	for (uint32_t i = 0; i < meshCount; i++) {
+		Mesh_ClearInstances(&model->meshes[i]);
+	}
+}
+
 void Model_Draw(model_t* model, const mesh_instancemodel_t* instance, uint32_t skin)
 {
 	if (!model->meshes) return;
 	
 	uint32_t meshCount = (uint32_t)Array_Count(model->meshes);
 	for (uint32_t i = 0; i < meshCount; i++) {
-		mesh_t mesh;
-		Array_Get(model->meshes, i, mesh);
+		Mesh_Draw(&model->meshes[i], instance);
+	}
+}
 
-		Mesh_Draw(&mesh, instance);
+void Model_DrawInstances(model_t* model)
+{
+	if (!model->meshes) return;
+	
+	uint32_t meshCount = (uint32_t)Array_Count(model->meshes);
+	for (uint32_t i = 0; i < meshCount; i++) {
+		Mesh_DrawInstances(&model->meshes[i]);
 	}
 }
