@@ -18,9 +18,12 @@
 #include <engine/log.h>
 #include <engine/input.h>
 #include <engine/edict.h>
+#include <engine/net.h>
 
 #include <platform/sys.h>
 #include <platform/lib.h>
+#include <platform/udp.h>
+#include <util/endian.h>
 
 #include <public/engine.h>
 
@@ -128,6 +131,10 @@ int Engine_Run(int argc, const char** argv)
 		return EXIT_FAILURE;
 	}
 
+	if (!Net_Init()) {
+		return EXIT_FAILURE;
+	}
+
 	if (!setup_game()) {
 		return EXIT_FAILURE;
 	}
@@ -181,7 +188,7 @@ int Engine_Run(int argc, const char** argv)
 		.brightness = 0.5f
 	};
 	uint32_t lid1 = Light_AddSpotlight(&lightParams);
-	
+
 	g_View.position = NEW_VEC3(0.0f, 2.0f, 0.0f);
 
 	model_t snickModel;
@@ -208,10 +215,49 @@ int Engine_Run(int argc, const char** argv)
 
 	g_GameExports.pGameInit();
 
+	Net_Setup(true);
+
+	net_address_t local = Net_LocalAddress(27015);
+
 	while (!glfwWindowShouldClose(window)) {
 		IN_Update();
 
 		glfwPollEvents();
+
+		{
+			int n = 0;
+
+			net_address_t from;
+			int server_read = Net_ReadPacket(NET_SERVER, &n, sizeof(n), &from);
+
+			if (server_read > -1) {
+				uint16_t port;
+				const char* address = Net_AddressToString(from, &port);
+				LOG_INFO("Got %d from client %s:%u", n, address, port);
+
+				Net_SendPacket(NET_SERVER, &n, sizeof(n), from);
+			}
+		}
+
+		{
+			int n = 0;
+
+			net_address_t from;
+			int client_read = Net_ReadPacket(NET_CLIENT, &n, sizeof(n), &from);
+
+			uint16_t port;
+			const char* address = Net_AddressToString(from, &port);
+
+			if (client_read > -1) {
+				LOG_INFO("Got %d from the server(%s:%u)", n, address, port);
+			}
+		}
+
+		if (IN_IsKeyPressed(GLFW_KEY_5)) {
+			int n = 125;
+
+			Net_SendPacket(NET_CLIENT, &n, sizeof(n), local);
+		}
 
 		prevTime = curTime;
 		curTime = (float)glfwGetTime();
@@ -221,7 +267,7 @@ int Engine_Run(int argc, const char** argv)
 			Phys_Update();
 			nextTick = curTime + tickRate;
 		}
-		
+
 		for (size_t i = 0; i < EDICT_MAX_COUNT; i++) {
 			edict_t* e = g_pEdicts + i;
 
@@ -335,6 +381,10 @@ int Engine_Run(int argc, const char** argv)
 
 	Model_Destroy(&snickModel);
 	Framebuffer_Destroy(&testFramebuffer);
+
+	Net_Close();
+
+	ED_Close();
 
 	Phys_Destroy();
 

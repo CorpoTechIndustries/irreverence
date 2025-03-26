@@ -8,7 +8,7 @@ void Sys_Print(const char* str);
 void Sys_Printf(const char* fmt, ...);
 void Sys_VPrintf(const char* fmt, va_list args);
 
-typedef unsigned int file_t;
+typedef int file_t;
 
 enum file_mode_t {
 	FILE_MODE_READ = 1 << 0,
