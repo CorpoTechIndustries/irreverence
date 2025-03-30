@@ -1,0 +1,65 @@
+#pragma once
+
+#include <math/mat4.h>
+#include <math/vec3.h>
+#include <math/quat.h>
+
+#include <stdint.h>
+#include <stdbool.h>
+
+#define MAX_ANIM_NODE_NAME_LENGTH 32
+
+typedef struct BoneInfo bone_info_t;
+typedef struct Model model_t;
+
+typedef struct {
+	vec3_t val;
+	float time;
+} keyframe_vec3_t;
+
+typedef struct {
+	quat_t val;
+	float time; 
+} keyframe_quat_t;
+
+typedef struct {
+	bone_info_t* boneInfo;
+	keyframe_quat_t* rotations;
+	keyframe_vec3_t* translations;
+	keyframe_vec3_t* scales;
+	mat4_t localTrans;
+} anim_bone_t;
+
+typedef struct AnimationNode {
+	struct AnimationNode* childrens;
+	mat4_t transform;
+	uint32_t childrenCount;
+	char name[MAX_ANIM_NODE_NAME_LENGTH];
+} anim_node_t;
+
+typedef struct {
+	anim_bone_t* bones;
+	float duration;
+	uint32_t ticksPerSecond;
+	anim_node_t rootNode; // TODO: Store this on the model instead
+} animation_t; // Will be stored on model_t
+
+typedef struct {
+	animation_t* animation;
+	mat4_t* finalMatrices;
+	float time;
+	float frametime;
+} animator_t;
+
+void AnimationBone_Init(anim_bone_t* animbone, bone_info_t* info, const void* channel);
+void AnimationBone_Update(anim_bone_t* animbone, float anim_time);
+void AnimationBone_Destroy(anim_bone_t* animbone);
+
+bool Animation_Init(animation_t* animation, model_t* model, const void* scene, uint32_t index);
+bool Animation_InitFromPath(animation_t* animation, model_t* model, const char* path, uint32_t index);
+anim_bone_t* Animation_FindBone(animation_t* animation, const char* name);
+void Animation_Destroy(animation_t* animation);
+
+void Animator_Init(animator_t* animator, animation_t* animation);
+void Animator_Update(animator_t* animator, float frametime);
+void Animator_Destroy(animator_t* animator);

@@ -9,7 +9,7 @@ typedef struct {
 	float x, y, z; 			// Position
 	float nx, ny, nz;		// Normal
 	float tx, ty;			// UV
-	uint8_t b1, b2, b3, b4; // Bone Ids
+	int32_t b1, b2, b3, b4; // Bone Ids
 	float w1, w2, w3, w4;	// Bone Weights
 } mesh_vertexmodel_t;
 

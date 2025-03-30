@@ -63,6 +63,11 @@ void Quat_AxisAngle(float angle, vec3_t axis, quat_t* dest)
 	glm_quatv(dest->v, glm_rad(angle), axis.v);
 }
 
+void Quat_SLerp(quat_t start, quat_t end, float t, quat_t* dest)
+{
+	glm_quat_slerp(start.v, end.v, t, dest->v);	
+}
+
 void Quat_GetAxisAngle(quat_t* quat, float* angle, vec3_t* axis)
 {
 	glm_quat_axis(quat->v, axis->v);

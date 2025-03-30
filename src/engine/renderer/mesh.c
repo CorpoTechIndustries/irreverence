@@ -66,7 +66,7 @@ bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t v
 	glVertexArrayAttribBinding(mesh->id, MODELMESH_UV, 0);
 
 	glEnableVertexArrayAttrib(mesh->id, MODELMESH_BONEIDS);
-	glVertexArrayAttribFormat(mesh->id, MODELMESH_BONEIDS, 1, GL_UNSIGNED_INT, GL_FALSE, offsetof(mesh_vertexmodel_t, b1));
+	glVertexArrayAttribFormat(mesh->id, MODELMESH_BONEIDS, 4, GL_INT, GL_FALSE, offsetof(mesh_vertexmodel_t, b1));
 	glVertexArrayAttribBinding(mesh->id, MODELMESH_BONEIDS, 0);
 
 	glEnableVertexArrayAttrib(mesh->id, MODELMESH_BONEWEIGHTS);

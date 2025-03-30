@@ -37,10 +37,10 @@ typedef struct
 
 static void ConvertMat4(const struct aiMatrix4x4* mat, mat4_t* dest)
 {
-	dest->v[0] = mat->a1; dest->v[4] = mat->a2; dest->v[8] = mat->a3;  dest->v[12] = mat->a4;
-	dest->v[1] = mat->b1; dest->v[5] = mat->b2; dest->v[9] = mat->b3;  dest->v[13] = mat->b4;
-	dest->v[2] = mat->c1; dest->v[6] = mat->c2; dest->v[10] = mat->c3; dest->v[14] = mat->c4;
-	dest->v[3] = mat->d1; dest->v[7] = mat->d2; dest->v[11] = mat->d3; dest->v[15] = mat->d4;
+	dest->m0 = mat->a1; dest->m4 = mat->a2; dest->m8 = mat->a3;  dest->m12 = mat->a4;
+	dest->m1 = mat->b1; dest->m5 = mat->b2; dest->m9 = mat->b3;  dest->m13 = mat->b4;
+	dest->m2 = mat->c1; dest->m6 = mat->c2; dest->m10 = mat->c3; dest->m14 = mat->c4;
+	dest->m3 = mat->d1; dest->m7 = mat->d2; dest->m11 = mat->d3; dest->m15 = mat->d4;
 }
 
 static mesh_data_t ProcessMesh(const struct aiMesh* mesh)
@@ -101,25 +101,34 @@ static mesh_data_t ProcessMesh(const struct aiMesh* mesh)
 		}
 	}
 
-	for (uint8_t j = 0; j < mesh->mNumBones; j++) {
-		struct aiBone* bone = mesh->mBones[j];
+	for (uint16_t i = 0; i < mesh->mNumBones; i++) {
+		const struct aiBone* bone = mesh->mBones[i];
 
-		bone_info_t* boneInfo = &s_pModel->bones.infos[s_pModel->bones.count];
-		boneInfo->id = s_pModel->bones.count++;
-		ConvertMat4(&bone->mOffsetMatrix, &boneInfo->offset);
+		bone_info_t boneInfo;
+		boneInfo.id = s_pModel->bones.count++;
+
+		if (bone->mName.length > 0) {
+			strncpy(boneInfo.name, bone->mName.data, MATH_MIN(bone->mName.length, MAX_BONEINFO_NAME_LENGTH));
+		} else {
+			Sys_MemZero(boneInfo.name, MAX_BONEINFO_NAME_LENGTH);
+		}
+
+		ConvertMat4(&bone->mOffsetMatrix, &boneInfo.offset);
+
+		Array_Push(s_pModel->bones.infos, boneInfo);
 
 		// LearnOpenGL uses a hashmap and a name check here to remove duplicates.. but why the fuck would there be duplicates?
 		// Using a hashmap will be extremely slow, besides, duplicate bones should be the problem of the model and its' format.
 
-		if (boneInfo->id == MAX_MODEL_BONES) {
+		if (boneInfo.id == MAX_MODEL_BONES) {
 			LOG_ERROR("Couldn't get Bone Id from model \"%s\" at bone \"%s\"", s_pModelPath, bone->mName.data);
 			return (mesh_data_t){ false };
 		}
 		
-		struct aiVertexWeight* weights = bone->mWeights;
-		for (uint32_t k = 0; k < bone->mNumWeights; k++) {
-			uint32_t vertexId = weights[k].mVertexId;
-			float weight = weights[k].mWeight;
+		const struct aiVertexWeight* weights = bone->mWeights;
+		for (uint32_t j = 0; j < bone->mNumWeights; j++) {
+			uint32_t vertexId = weights[j].mVertexId;
+			float weight = weights[j].mWeight;
 
 			if (vertexId >= mesh->mNumVertices) {
 				LOG_ERROR("Bone Vertex Id is greater than the amount of vertices..?");
@@ -127,19 +136,25 @@ static mesh_data_t ProcessMesh(const struct aiMesh* mesh)
 			}
 
 			mesh_vertexmodel_t* boneWVertex = &meshdata.vertices[vertexId];
-			uint8_t* vertexBoneIds = &boneWVertex->b1;
+			uint32_t* vertexBoneIds = &boneWVertex->b1;
 			float* vertexBoneWeights = &boneWVertex->w1;
-			for (uint8_t l = 0; l < MAX_MODEL_WEIGHT; l++) { 
-				if (vertexBoneIds[l] == MAX_MODEL_BONES) {
-					vertexBoneIds[l] = boneInfo->id;
-					vertexBoneWeights[l] = weight;
+			for (uint8_t k = 0; k < MAX_MODEL_WEIGHT; k++) { 
+				if (vertexBoneIds[k] == MAX_MODEL_BONES) {
+					vertexBoneIds[k] = boneInfo.id;
+					vertexBoneWeights[k] = weight;
 					break;
 				}
 			}
 		}
-		
-		LOG_INFO("Bone \"%s\", %i", bone->mName.data, boneInfo->id);
 	}
+
+	// size_t count = Array_Size(meshdata.vertices);
+	// for (size_t i = 0; i < 500; i++) {
+	// 	mesh_vertexmodel_t* vertex = &meshdata.vertices[i];
+	// 	LOG_INFO("%i: %i, %i, %i, %i", i, vertex->b1, vertex->b2, vertex->b3, vertex->b4);
+		
+	// }
+	
 
 	return meshdata;
 }
@@ -187,10 +202,12 @@ static void RecursiveProcessNode(const struct aiScene* scene, const struct aiNod
 
 bool Model_Init(model_t* model, const char* path)
 {
-	if (!path) return false;
-
 	model->meshes = NULL;
 	model->meshMaterials = NULL;
+	model->bones.infos = Array_Create(bone_info_t);
+	model->bones.count = 0;
+
+	if (!path) return false;
 	
 	const char* fileExtension = Sys_PathGetExtension(path);
 	if (!fileExtension || aiIsExtensionSupported(fileExtension) == AI_FALSE) {
@@ -223,7 +240,8 @@ bool Model_Init(model_t* model, const char* path)
 	RecursiveProcessNode(scene, scene->mRootNode);
 
 	aiReleaseImport(scene);
-
+	
+	s_pModel = NULL;
 	s_pModelPath = NULL;
 	s_pMeshArray = NULL;
 	s_pMeshMaterialsArray = NULL;
@@ -261,6 +279,11 @@ void Model_Destroy(model_t* model)
 	if (model->meshMaterials) {
 		Array_Destroy(model->meshMaterials);
 		model->meshMaterials = NULL;
+	}
+
+	if (model->bones.infos) {
+		Array_Destroy(model->bones.infos);
+		model->bones.infos = NULL;
 	}
 }
 
@@ -302,4 +325,17 @@ void Model_DrawInstances(model_t* model)
 	for (uint32_t i = 0; i < meshCount; i++) {
 		Mesh_DrawInstances(&model->meshes[i]);
 	}
+}
+
+bone_info_t* Model_FindBoneInfo(model_t* model, const char* name)
+{
+	uint32_t boneCount = (uint32_t)Array_Count(model->bones.infos);
+	for (uint16_t i = 0; i < boneCount; i++) {
+		bone_info_t* boneinfo = &model->bones.infos[i];
+		if (strncmp(name, boneinfo->name, MAX_BONEINFO_NAME_LENGTH) == 0) {
+			return boneinfo;
+		}
+	}
+
+	return NULL;
 }

@@ -55,6 +55,7 @@ void Vec3_Normalize(vec3_t vec, vec3_t* dest);
 void Vec3_Cross(vec3_t v1, vec3_t v2, vec3_t* dest);
 float Vec3_Dot(vec3_t v1, vec3_t v2);
 void Vec3_Rotate(float angle, vec3_t axis, vec3_t* dest);
+void Vec3_Lerp(vec3_t start, vec3_t end, float t, vec3_t* dest);
 
 ivec3_t IVec3_Add(ivec3_t v1, ivec3_t v2);
 ivec3_t IVec3_Sub(ivec3_t v1, ivec3_t v2);

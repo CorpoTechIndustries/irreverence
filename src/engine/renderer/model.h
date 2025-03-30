@@ -6,21 +6,23 @@
 #include <util/array.h>
 
 #define MAX_MODEL_SKINS 1
-#define MAX_MODEL_BONES 255
-#define MAX_MODEL_WEIGHT 4
+#define MAX_MODEL_BONES UINT16_MAX
+#define MAX_MODEL_WEIGHT 4 
+#define MAX_BONEINFO_NAME_LENGTH 32
 
-typedef struct {
+typedef struct BoneInfo {
+	char name[MAX_BONEINFO_NAME_LENGTH];
 	mat4_t offset;
-	uint8_t id;
+	int32_t id;
 } bone_info_t;
 
-typedef struct {
+typedef struct Model {
 	mesh_t* meshes;
 	material_t* meshMaterials;
 
 	struct {
-		bone_info_t infos[MAX_MODEL_BONES];
-		uint8_t count;
+		bone_info_t* infos;
+		uint32_t count;
 	} bones;
 } model_t;
 
@@ -33,3 +35,5 @@ void Model_ClearInstances(model_t* model);
 
 void Model_Draw(model_t* model, const mesh_instancemodel_t* instance, uint32_t skin);
 void Model_DrawInstances(model_t* model);
+
+bone_info_t* Model_FindBoneInfo(model_t* model, const char* name);

@@ -1,5 +1,6 @@
 #include <math/mat4.h>
 
+#define CGLM_ALL_UNALIGNED
 #include <cglm/cglm.h>
 
 #define GLM_MAT float(*)[4]
@@ -27,6 +28,11 @@ void Mat4_Scale(mat4_t* mat, vec3_t scale)
 void Mat4_Rotate(mat4_t* mat, float angle, vec3_t axis)
 {
 	glm_rotate((GLM_MAT)mat, glm_rad(angle), axis.v);
+}
+
+void Mat4_RotateQuat(mat4_t* mat, quat_t rotation)
+{
+	glm_quat_rotate((GLM_MAT)mat, rotation.v, (GLM_MAT)mat);
 }
 
 void Mat4_Ortho(float left, float right, float bottom, float top, float nearZ, float farZ, mat4_t* dest)

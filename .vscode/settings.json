@@ -53,7 +53,10 @@
         "array.h": "c",
         "memory.h": "c",
         "random": "c",
-        "sort.h": "c"
+        "sort.h": "c",
+        "chrono": "c",
+        "typeinfo": "c",
+        "postprocess.h": "c"
     },
     "editor.insertSpaces": false,
 	"files.insertFinalNewline": true

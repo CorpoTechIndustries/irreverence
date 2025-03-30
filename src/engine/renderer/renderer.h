@@ -1,6 +1,7 @@
 #pragma once
 
 #include <engine/renderer/mesh.h>
+#include <engine/renderer/animation.h>
 #include <math/vec2.h>
 #include <math/vec3.h>
 
@@ -32,6 +33,8 @@ void R_WindowUpdate(int width, int height);
 void R_DebugMoveUpdate();
 
 void R_Present();
+
+void R_UpdateAnimationBuffer(animator_t* animator);
 
 ivec2_t R_GetWindowSize();
 

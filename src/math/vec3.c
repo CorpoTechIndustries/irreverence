@@ -90,6 +90,11 @@ void Vec3_Rotate(float angle, vec3_t axis, vec3_t* dest)
 	glm_vec3_rotate(dest->v, glm_rad(angle), axis.v);
 }
 
+void Vec3_Lerp(vec3_t start, vec3_t end, float t, vec3_t* dest)
+{
+	glm_vec3_mix(start.v, end.v, t, dest->v);
+}
+
 // ------------------------------
 // IVec3
 
