@@ -9,8 +9,8 @@ typedef struct {
 	float x, y, z; 			// Position
 	float nx, ny, nz;		// Normal
 	float tx, ty;			// UV
-	int32_t b1, b2, b3, b4; // Bone Ids
-	float w1, w2, w3, w4;	// Bone Weights
+	int32_t bones[4]; // Bone Ids
+	float weights[4];	// Bone Weights
 } mesh_vertexmodel_t;
 
 typedef struct {
@@ -30,7 +30,7 @@ typedef struct {
 	uint32_t ebo;
 	uint32_t vertexCount;
 	uint32_t indexCount;
-	
+
 	struct {
 		uint32_t stride;
 		uint32_t count;

@@ -7,7 +7,7 @@
 
 #define MAX_MODEL_SKINS 1
 #define MAX_MODEL_BONES UINT16_MAX
-#define MAX_MODEL_WEIGHT 4 
+#define MAX_MODEL_WEIGHT 4
 #define MAX_BONEINFO_NAME_LENGTH 32
 
 typedef struct BoneInfo {

@@ -27,7 +27,7 @@ static bool s_bSuccess = false;
 typedef struct
 {
 	bool success;
-	
+
 	const char* materialPath[MAX_MODEL_SKINS];
 	uint8_t materialCount;
 
@@ -81,15 +81,11 @@ static mesh_data_t ProcessMesh(const struct aiMesh* mesh)
 			vertex.tx = 0.0f;
 		}
 
-		vertex.b1 = MAX_MODEL_BONES;
-		vertex.b2 = MAX_MODEL_BONES;
-		vertex.b3 = MAX_MODEL_BONES;
-		vertex.b4 = MAX_MODEL_BONES;
+		for (size_t i = 0; i < MAX_MODEL_WEIGHT; i++) {
+			vertex.bones[i] = -1;
+		}
 
-		vertex.w1 = 0.0f;
-		vertex.w2 = 0.0f;
-		vertex.w3 = 0.0f;
-		vertex.w4 = 0.0f;
+		Sys_MemZero(vertex.weights, sizeof(vertex.weights));
 
 		meshdata.vertices[i] = vertex;
 	}
@@ -120,11 +116,11 @@ static mesh_data_t ProcessMesh(const struct aiMesh* mesh)
 		// LearnOpenGL uses a hashmap and a name check here to remove duplicates.. but why the fuck would there be duplicates?
 		// Using a hashmap will be extremely slow, besides, duplicate bones should be the problem of the model and its' format.
 
-		if (boneInfo.id == MAX_MODEL_BONES) {
+		if (boneInfo.id == -1) {
 			LOG_ERROR("Couldn't get Bone Id from model \"%s\" at bone \"%s\"", s_pModelPath, bone->mName.data);
 			return (mesh_data_t){ false };
 		}
-		
+
 		const struct aiVertexWeight* weights = bone->mWeights;
 		for (uint32_t j = 0; j < bone->mNumWeights; j++) {
 			uint32_t vertexId = weights[j].mVertexId;
@@ -136,12 +132,11 @@ static mesh_data_t ProcessMesh(const struct aiMesh* mesh)
 			}
 
 			mesh_vertexmodel_t* boneWVertex = &meshdata.vertices[vertexId];
-			uint32_t* vertexBoneIds = &boneWVertex->b1;
-			float* vertexBoneWeights = &boneWVertex->w1;
-			for (uint8_t k = 0; k < MAX_MODEL_WEIGHT; k++) { 
-				if (vertexBoneIds[k] == MAX_MODEL_BONES) {
-					vertexBoneIds[k] = boneInfo.id;
-					vertexBoneWeights[k] = weight;
+
+			for (uint8_t k = 0; k < MAX_MODEL_WEIGHT; k++) {
+				if (boneWVertex->bones[k] == -1) {
+					boneWVertex->bones[k] = boneInfo.id;
+					boneWVertex->weights[k] = weight;
 					break;
 				}
 			}
@@ -152,9 +147,7 @@ static mesh_data_t ProcessMesh(const struct aiMesh* mesh)
 	// for (size_t i = 0; i < 500; i++) {
 	// 	mesh_vertexmodel_t* vertex = &meshdata.vertices[i];
 	// 	LOG_INFO("%i: %i, %i, %i, %i", i, vertex->b1, vertex->b2, vertex->b3, vertex->b4);
-		
 	// }
-	
 
 	return meshdata;
 }
@@ -174,7 +167,7 @@ static void RecursiveProcessNode(const struct aiScene* scene, const struct aiNod
 			Mesh_InitModel(&mesh, meshdata.vertices, vertexCount, meshdata.indices, indexCount);
 
 			Array_Push(s_pMeshArray, mesh);
-			
+
 			Array_Destroy(meshdata.vertices);
 			Array_Destroy(meshdata.indices);
 		} else {
@@ -208,13 +201,13 @@ bool Model_Init(model_t* model, const char* path)
 	model->bones.count = 0;
 
 	if (!path) return false;
-	
+
 	const char* fileExtension = Sys_PathGetExtension(path);
 	if (!fileExtension || aiIsExtensionSupported(fileExtension) == AI_FALSE) {
 		LOG_ERROR("Model path does not have a valid or supported extension");
 		return false;
 	}
-	
+
 	const struct aiScene* scene = NULL;
 	scene = aiImportFile(path, ASSIMP_LOADER_FLAG);
 
@@ -227,7 +220,7 @@ bool Model_Init(model_t* model, const char* path)
 		LOG_ERROR("Model has no meshes");
 		return false;
 	}
-	
+
 	model->meshes = Array_Create(mesh_t);
 
 	s_pModel = model;
@@ -240,7 +233,7 @@ bool Model_Init(model_t* model, const char* path)
 	RecursiveProcessNode(scene, scene->mRootNode);
 
 	aiReleaseImport(scene);
-	
+
 	s_pModel = NULL;
 	s_pModelPath = NULL;
 	s_pMeshArray = NULL;
@@ -263,12 +256,12 @@ bool Model_InitFromMeshes(model_t* model, mesh_t* meshes, uint32_t mesh_count)
 
 void Model_Destroy(model_t* model)
 {
-	if (model->meshes) { 
+	if (model->meshes) {
 		uint32_t meshCount = (uint32_t)Array_Size(model->meshes);
 		for (uint32_t i = 0; i < meshCount; i++) {
 			mesh_t mesh;
 			Array_Get(model->meshes, i, mesh);
-	
+
 			Mesh_Destroy(&mesh);
 		}
 
@@ -290,7 +283,7 @@ void Model_Destroy(model_t* model)
 void Model_AddInstance(model_t* model, const mesh_instancemodel_t* instance)
 {
 	if (!model->meshes) return;
-	
+
 	uint32_t meshCount = (uint32_t)Array_Count(model->meshes);
 	for (uint32_t i = 0; i < meshCount; i++) {
 		Mesh_AddInstance(&model->meshes[i], instance);
@@ -300,7 +293,7 @@ void Model_AddInstance(model_t* model, const mesh_instancemodel_t* instance)
 void Model_ClearInstances(model_t* model)
 {
 	if (!model->meshes) return;
-	
+
 	uint32_t meshCount = (uint32_t)Array_Count(model->meshes);
 	for (uint32_t i = 0; i < meshCount; i++) {
 		Mesh_ClearInstances(&model->meshes[i]);
@@ -310,7 +303,7 @@ void Model_ClearInstances(model_t* model)
 void Model_Draw(model_t* model, const mesh_instancemodel_t* instance, uint32_t skin)
 {
 	if (!model->meshes) return;
-	
+
 	uint32_t meshCount = (uint32_t)Array_Count(model->meshes);
 	for (uint32_t i = 0; i < meshCount; i++) {
 		Mesh_Draw(&model->meshes[i], instance);
@@ -320,7 +313,7 @@ void Model_Draw(model_t* model, const mesh_instancemodel_t* instance, uint32_t s
 void Model_DrawInstances(model_t* model)
 {
 	if (!model->meshes) return;
-	
+
 	uint32_t meshCount = (uint32_t)Array_Count(model->meshes);
 	for (uint32_t i = 0; i < meshCount; i++) {
 		Mesh_DrawInstances(&model->meshes[i]);

@@ -29,10 +29,10 @@ bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t v
 	mesh->instances.stride = sizeof(mesh_instancemodel_t);
 	mesh->instances.count = 0;
 	mesh->instances.capacity = 0;
-	
+
 	size_t vertexSize = vertex_count * sizeof(mesh_vertexmodel_t);
 	size_t indexSize = index_count * sizeof(uint32_t);
-		
+
 	// Create OpenGL Objects
 	glCreateBuffers(1, &mesh->vbo);
 	glNamedBufferStorage(mesh->vbo, vertexSize, vertices, GL_DYNAMIC_STORAGE_BIT);
@@ -66,11 +66,11 @@ bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t v
 	glVertexArrayAttribBinding(mesh->id, MODELMESH_UV, 0);
 
 	glEnableVertexArrayAttrib(mesh->id, MODELMESH_BONEIDS);
-	glVertexArrayAttribFormat(mesh->id, MODELMESH_BONEIDS, 4, GL_INT, GL_FALSE, offsetof(mesh_vertexmodel_t, b1));
+	glVertexArrayAttribFormat(mesh->id, MODELMESH_BONEIDS, 4, GL_INT, GL_FALSE, offsetof(mesh_vertexmodel_t, bones));
 	glVertexArrayAttribBinding(mesh->id, MODELMESH_BONEIDS, 0);
 
 	glEnableVertexArrayAttrib(mesh->id, MODELMESH_BONEWEIGHTS);
-	glVertexArrayAttribFormat(mesh->id, MODELMESH_BONEWEIGHTS, 4, GL_FLOAT, GL_FALSE, offsetof(mesh_vertexmodel_t, w1));
+	glVertexArrayAttribFormat(mesh->id, MODELMESH_BONEWEIGHTS, 4, GL_FLOAT, GL_FALSE, offsetof(mesh_vertexmodel_t, weights));
 	glVertexArrayAttribBinding(mesh->id, MODELMESH_BONEWEIGHTS, 0);
 
 	// Link Instance Buffer and Set Instance Buffer Layout
@@ -88,7 +88,7 @@ bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t v
 
 bool Mesh_InitSkybox(mesh_t* mesh, const mesh_vertexsky_t* vertices, uint32_t vertex_count)
 {
-	
+
 	size_t vertexSize = vertex_count * sizeof(mesh_vertexsky_t);
 
 	mesh->vertexCount = vertex_count;
@@ -116,7 +116,7 @@ void Mesh_AddInstance(mesh_t* mesh, const void* data)
 {
 	if (mesh->instances.stride == 0) {
 		return;
-	} 
+	}
 
 	if (!mesh->instances.array) {
 		mesh->instances.array = Sys_Calloc(mesh->instances.stride);

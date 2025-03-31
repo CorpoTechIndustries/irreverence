@@ -30,13 +30,21 @@ typedef enum {
 	NET_COUNT
 } net_source_t;
 
-#define MAX_NET_PACKET_SIZE 2 << 16
+typedef enum {
+	NET_TYPE_LOOPBACK,
+	NET_TYPE_BROADCAST,
+	NET_TYPE_IP
+} net_type_t;
+
+#define MAX_NET_PACKET_SIZE 1 << 16
 
 bool Net_Init();
 void Net_Close();
 bool Net_Setup(bool multiplayer);
 int Net_SendPacket(net_source_t source, const void* data, size_t size, net_address_t address);
+int Net_SendLoopbackPacket(net_source_t source, const void* data, size_t size, net_address_t address);
 int Net_ReadPacket(net_source_t source, void* data, size_t size, net_address_t* from);
+int Net_ReadLoopbackPacket(net_source_t source, void* data, size_t size, net_address_t* from);
 
 net_address_t Net_LocalAddress(uint16_t port);
 net_address_t Net_Address(const char* address, uint16_t port);

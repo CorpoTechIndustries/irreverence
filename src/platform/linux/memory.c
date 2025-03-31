@@ -20,6 +20,13 @@ void* Sys_Calloc(size_t size)
 	return p;
 }
 
+void* Sys_AlignedAlloc(size_t size, size_t align)
+{
+	void* p = aligned_alloc(align, size);
+
+	return p;
+}
+
 void Sys_Free(void* ptr)
 {
 	free(ptr);

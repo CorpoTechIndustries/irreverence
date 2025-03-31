@@ -20,6 +20,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <stdalign.h>
+
 static void glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
 {
 	if (type == GL_DEBUG_TYPE_PERFORMANCE) return;
@@ -73,6 +75,11 @@ static struct {
 	mat4_t projection;
 } s_GlobalData;
 
+static struct {
+	mat4_t alignas(16) matrices[100];
+	uint32_t bones;
+} s_AnimationData;
+
 static uniform_t s_AnimationUniform;
 
 static texture_t s_MissingTexture;
@@ -111,11 +118,10 @@ bool R_Init()
 		.farZ = 1000.0f
 	};
 
-	Uniform_Init(&s_GlobalUniform, 0, NULL, sizeof(s_GlobalData));
+	Uniform_Init(&s_GlobalUniform, UNIFORM_LOCATION_GLOBAL, NULL, sizeof(s_GlobalData));
 
-	uint32_t boneCount = 0;
-	Uniform_Init(&s_AnimationUniform, 1, NULL, sizeof(mat4_t) * 100 + sizeof(uint32_t));
-	Uniform_Update(&s_AnimationUniform, &boneCount, sizeof(uint32_t), sizeof(mat4_t) * 100);
+	s_AnimationData.bones = 0;
+	Uniform_Init(&s_AnimationUniform, UNIFORM_LOCATION_ANIMATIONS, &s_AnimationData, sizeof(s_AnimationData));
 
 	Light_Init();
 
@@ -143,30 +149,30 @@ bool R_Init()
 	Texture_InitFromMemory(&s_WhiteTexture, (const uint8_t*)&whiteColor, 1, 1, 3, false, false);
 
 	const mesh_vertexmodel_t cubeVertices[] = {
-		{ -1.0f, 1.0f, -1.0f,		0.0f, 1.0f, 0.0f,		1.0f, 1.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ 1.0f, 1.0f, 1.0f,			0.0f, 1.0f, 0.0f,		0.0f, 0.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ 1.0f, 1.0f, -1.0f,		0.0f, 1.0f, 0.0f,		0.0f, 1.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ 1.0f, 1.0f, 1.0f,			0.0f, 0.0f, 1.0f,		1.0f, 1.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ -1.0f, -1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		0.0f, 0.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ 1.0f, -1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		0.0f, 1.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ -1.0f, 1.0f, 1.0f,		-1.0f, 0.0f, 0.0f,		1.0f, 1.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ -1.0f, -1.0f, -1.0f,		-1.0f, 0.0f, 0.0f,		0.0f, 0.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ -1.0f, -1.0f, 1.0f,		-1.0f, 0.0f, 0.0f,		0.0f, 1.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ 1.0f, -1.0f, -1.0f,		0.0f, -1.0f, 0.0f,		1.0f, 1.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ -1.0f, -1.0f, 1.0f,		0.0f, -1.0f, 0.0f,		0.0f, 0.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ -1.0f, -1.0f, -1.0f,		0.0f, -1.0f, 0.0f,		0.0f, 1.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ 1.0f, 1.0f, -1.0f,		1.0f, 0.0f, 0.0f,		1.0f, 1.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ 1.0f, -1.0f, 1.0f,		1.0f, 0.0f, 0.0f,		0.0f, 0.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ 1.0f, -1.0f, -1.0f,		1.0f, 0.0f, 0.0f,		0.0f, 1.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ -1.0f, 1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		1.0f, 1.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ 1.0f, -1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		0.0f, 0.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ -1.0f, -1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		0.0f, 1.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ -1.0f, 1.0f, 1.0f,		0.0f, 1.0f, 0.0f,		1.0f, 0.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ -1.0f, 1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		1.0f, 0.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ -1.0f, 1.0f, -1.0f,		-1.0f, 0.0f, 0.0f,		1.0f, 0.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ 1.0f, -1.0f, 1.0f,		0.0f, -1.0f, 0.0f,		1.0f, 0.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ 1.0f, 1.0f, 1.0f,			1.0f, 0.0f, 0.0f,		1.0f, 0.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f},
-		{ 1.0f, 1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		1.0f, 0.0f, 	65535, 65535, 65535, 65535, 	0.0f, 0.0f, 0.0f, 0.0f}
+		{ -1.0f, 1.0f, -1.0f,		0.0f, 1.0f, 0.0f,		1.0f, 1.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ 1.0f, 1.0f, 1.0f,			0.0f, 1.0f, 0.0f,		0.0f, 0.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ 1.0f, 1.0f, -1.0f,		0.0f, 1.0f, 0.0f,		0.0f, 1.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ 1.0f, 1.0f, 1.0f,			0.0f, 0.0f, 1.0f,		1.0f, 1.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ -1.0f, -1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		0.0f, 0.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ 1.0f, -1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		0.0f, 1.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ -1.0f, 1.0f, 1.0f,		-1.0f, 0.0f, 0.0f,		1.0f, 1.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ -1.0f, -1.0f, -1.0f,		-1.0f, 0.0f, 0.0f,		0.0f, 0.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ -1.0f, -1.0f, 1.0f,		-1.0f, 0.0f, 0.0f,		0.0f, 1.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ 1.0f, -1.0f, -1.0f,		0.0f, -1.0f, 0.0f,		1.0f, 1.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ -1.0f, -1.0f, 1.0f,		0.0f, -1.0f, 0.0f,		0.0f, 0.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ -1.0f, -1.0f, -1.0f,		0.0f, -1.0f, 0.0f,		0.0f, 1.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ 1.0f, 1.0f, -1.0f,		1.0f, 0.0f, 0.0f,		1.0f, 1.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ 1.0f, -1.0f, 1.0f,		1.0f, 0.0f, 0.0f,		0.0f, 0.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ 1.0f, -1.0f, -1.0f,		1.0f, 0.0f, 0.0f,		0.0f, 1.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ -1.0f, 1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		1.0f, 1.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ 1.0f, -1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		0.0f, 0.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ -1.0f, -1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		0.0f, 1.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ -1.0f, 1.0f, 1.0f,		0.0f, 1.0f, 0.0f,		1.0f, 0.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ -1.0f, 1.0f, 1.0f,		0.0f, 0.0f, 1.0f,		1.0f, 0.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ -1.0f, 1.0f, -1.0f,		-1.0f, 0.0f, 0.0f,		1.0f, 0.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ 1.0f, -1.0f, 1.0f,		0.0f, -1.0f, 0.0f,		1.0f, 0.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ 1.0f, 1.0f, 1.0f,			1.0f, 0.0f, 0.0f,		1.0f, 0.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f},
+		{ 1.0f, 1.0f, -1.0f,		0.0f, 0.0f, -1.0f,		1.0f, 0.0f, 	-1, -1, -1, -1, 	0.0f, 0.0f, 0.0f, 0.0f}
 	};
 	const uint32_t cubeIndices[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 0, 18, 1, 3, 19, 4, 6, 20, 7, 9, 21, 10, 12, 22, 13, 15, 23, 16 };
 	Mesh_InitModel(&s_CubeMesh, cubeVertices, 24, cubeIndices, 36);
@@ -265,8 +271,16 @@ void R_Present()
 void R_UpdateAnimationBuffer(animator_t* animator)
 {
 	uint32_t boneCount = (uint32_t)Array_Size(animator->animation->bones);
-	Uniform_Update(&s_AnimationUniform, animator->finalMatrices, sizeof(mat4_t) * boneCount, 0);
-	Uniform_Update(&s_AnimationUniform, &boneCount, sizeof(uint32_t), sizeof(mat4_t) * 100);
+
+	Sys_MemZero(s_AnimationData.matrices, sizeof(s_AnimationData.matrices));
+
+	Sys_MemCpy(animator->finalMatrices, s_AnimationData.matrices, sizeof(mat4_t) * boneCount);
+
+	s_AnimationData.bones = boneCount;
+	Uniform_Update(&s_AnimationUniform, &s_AnimationData, sizeof(s_AnimationData), 0);
+
+	// Uniform_Update(&s_AnimationUniform, animator->finalMatrices, sizeof(mat4_t) * boneCount, 0);
+	// Uniform_Update(&s_AnimationUniform, &boneCount, sizeof(uint32_t), sizeof(mat4_t) * 100);
 }
 
 ivec2_t R_GetWindowSize()

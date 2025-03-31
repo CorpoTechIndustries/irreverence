@@ -19,7 +19,7 @@ layout(std140, binding = 0) uniform GlobalUniform
 	mat4 Projection;
 } uGlobal;
 
-layout(std140, binding = 1) uniform AnimationUniform
+layout(std140, binding = 3) uniform AnimationUniform
 {
 	mat4 uBoneMatrices[100];
 	uint uBoneCount;
@@ -38,12 +38,12 @@ void main()
 
 	vec4 totalPosition = vec4(0.0);
 	for (uint i = 0; i < 4; i++) {
-		if (boneIds[i] == 65535) {
+		if (boneIds[i] == -1) {
 			continue;
 		}
 
-		if (boneIds[i] >= 100) {
-			totalPosition += vec4(aPos, 1.0);
+		if (boneIds[i] >= int(uBoneCount)) {
+			totalPosition = vec4(aPos, 1.0);
 			break;
 		}
 

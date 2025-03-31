@@ -4,6 +4,7 @@
 
 void* Sys_Malloc(size_t size);
 void* Sys_Calloc(size_t size);
+void* Sys_AlignedAlloc(size_t size, size_t align);
 void Sys_Free(void* ptr);
 void* Sys_ReAlloc(void* ptr, size_t new_size);
 

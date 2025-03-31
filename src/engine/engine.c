@@ -20,6 +20,7 @@
 #include <engine/input.h>
 #include <engine/edict.h>
 #include <engine/net.h>
+#include <engine/cvar.h>
 
 #include <platform/sys.h>
 #include <platform/lib.h>
@@ -27,6 +28,8 @@
 #include <util/endian.h>
 
 #include <public/engine.h>
+
+#include <platform/memory.h>
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -299,7 +302,7 @@ int Engine_Run(int argc, const char** argv)
 
 		R_DebugMoveUpdate();
 
-		
+
 		// uint32_t n = 2;
 		// LOG_INFO("--------------");
 		// LOG_INFO("%f, %f, %f, %f", animator035.finalMatrices[n].m0, animator035.finalMatrices[n].m1, animator035.finalMatrices[n].m2, animator035.finalMatrices[n].m3);
@@ -307,42 +310,42 @@ int Engine_Run(int argc, const char** argv)
 		// LOG_INFO("%f, %f, %f, %f", animator035.finalMatrices[n].m8, animator035.finalMatrices[n].m9, animator035.finalMatrices[n].m10, animator035.finalMatrices[n].m11);
 		// LOG_INFO("%f, %f, %f, %f", animator035.finalMatrices[n].m12, animator035.finalMatrices[n].m13, animator035.finalMatrices[n].m14, animator035.finalMatrices[n].m15);
 		// LOG_INFO("--------------");
-		
+
 		R_Present();
-		
+
 		if (IN_IsKeyPressed(GLFW_KEY_P)) {
 			Snd_PlayStream(&stream);
-			
+
 			if (lid1 != UINT32_MAX) {
 				Light_RemoveSpotlight(lid1);
 				lid1 = UINT32_MAX;
 			}
-			
+
 			pointlight_data_t christParams = {
 				.position = NEW_VEC3(-3.0f, 2.0f, -1.0f),
 				.color = NEW_VEC3(1.0f, 0.0f, 0.0f),
 				.brightness = 0.25f,
 				.radius = 100.0f
 			};
-			
+
 			Light_AddPointlight(&christParams);
-			
+
 			christParams.position = NEW_VEC3(3.0f, 2.0f, -1.0f);
 			christParams.color = NEW_VEC3(0.0f, 1.0f, 0.0f);
 			Light_AddPointlight(&christParams);
 		}
-		
+
 		if (IN_IsKeyPressed(GLFW_KEY_R)) {
 			hi += 0.05f;
 			Light_SetSLightBrightness(lid1, hi);
 		}
-		
+
 		Framebuffer_Bind(&testFramebuffer);
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
+
 		Shader_Bind(&testShader);
-		
+
 		Texture_Bind(R_GetWhiteTexture(), 0);
 		mesh_instancemodel_t coobeInstance = {
 			.r = 1.0f,
@@ -363,15 +366,17 @@ int Engine_Run(int argc, const char** argv)
 		Model_AddInstance(&mapModel, &mapInstance);
 		Model_DrawInstances(&mapModel);
 
+		Texture_Bind(R_GetWhiteTexture(), 0);
 		Mesh_DrawInstances(R_GetCubeMesh());
 
 		Animator_Update(&animator035, frameTime);
+
 		R_UpdateAnimationBuffer(&animator035);
 		Model_Draw(&animModel, &animInstance, 0);
 
 		Framebuffer_UnBind();
 		Framebuffer_CopyTo(&testFramebuffer, NULL, false);
-		
+
 		Mesh_ClearInstances(R_GetCubeMesh());
 		Model_ClearInstances(&mapModel);
 
