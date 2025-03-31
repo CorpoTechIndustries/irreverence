@@ -18,7 +18,7 @@ typedef union {
 
 	struct {
 		vec_t x, y, z, w;
-	} __attribute((aligned(16)));
+	};
 } quat_t;
 
 quat_t Quat_Add(quat_t v1, quat_t v2);
@@ -31,6 +31,7 @@ void Quat_SubTo(quat_t v1, quat_t v2, quat_t* dest);
 void Quat_MulTo(quat_t v1, quat_t v2, quat_t* dest);
 void Quat_DivTo(quat_t v1, quat_t v2, quat_t* dest);
 
+void Quat_Normalize(quat_t quat, quat_t* dest);
 void Quat_AxisAngle(float angle, vec3_t axis, quat_t* dest);
 void Quat_SLerp(quat_t start, quat_t end, float t, quat_t* dest);
 

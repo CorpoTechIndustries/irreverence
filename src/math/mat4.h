@@ -38,6 +38,7 @@ void Mat4_Scale(mat4_t* mat, vec3_t scale);
 void Mat4_Rotate(mat4_t* mat, float angle, vec3_t axis);
 void Mat4_RotateQuat(mat4_t* mat, quat_t rotation);
 
+void Mat4_QuatToMat4(quat_t quat, mat4_t* dest);
 void Mat4_Ortho(float left, float right, float bottom, float top, float nearZ, float farZ, mat4_t* dest);
 void Mat4_Perspective(float fov, float aspect, float nearZ, float farZ, mat4_t* dest);
 void Mat4_LookAt(vec3_t eye, vec3_t center, vec3_t up, mat4_t* dest);

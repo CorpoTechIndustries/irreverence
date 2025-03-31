@@ -183,15 +183,12 @@ int Engine_Run(int argc, const char** argv)
 
 	Snd_SetStreamSound(&stream, sound);
 
-	spotlight_data_t lightParams = {
-		.position = NEW_VEC3(0.0f, 5.0f, -1.0f),
-		.direction = NEW_VEC3(0.0f, -1.0f, 0.0f),
+	pointlight_data_t lightParams = {
+		.position = NEW_VEC3(0.0f, 4.0f, -1.0f),
 		.color = NEW_VEC3S(1.0f),
-		.cutoff = 45.0f,
-		.outerCutoff = 60.0f,
 		.brightness = 0.5f
 	};
-	uint32_t lid1 = Light_AddSpotlight(&lightParams);
+	uint32_t lid1 = Light_AddPointlight(&lightParams);
 
 	g_View.position = NEW_VEC3(0.0f, 2.0f, 0.0f);
 
@@ -217,13 +214,7 @@ int Engine_Run(int argc, const char** argv)
 		.model = MAT4_IDENTITY
 	};
 	Mat4_Translate(&animInstance.model, NEW_VEC3(0.0f, -3.25f, -5.0f));
-	Mat4_Scale(&animInstance.model, NEW_VEC3S(0.05f));
-
-	animation_t anim035;
-	Animation_InitFromPath(&anim035, &animModel, "assets/models/dancing_vampire.dae", 0);
-
-	animator_t animator035;
-	Animator_Init(&animator035, &anim035);
+	Mat4_Scale(&animInstance.model, NEW_VEC3S(0.02f));
 
 	quat_t coobeStartQuat = QUAT_IDENTITY;
 	Quat_AxisAngle(45.0f, NEW_VEC3S(1.0f), &coobeStartQuat);
@@ -302,22 +293,13 @@ int Engine_Run(int argc, const char** argv)
 
 		R_DebugMoveUpdate();
 
-
-		// uint32_t n = 2;
-		// LOG_INFO("--------------");
-		// LOG_INFO("%f, %f, %f, %f", animator035.finalMatrices[n].m0, animator035.finalMatrices[n].m1, animator035.finalMatrices[n].m2, animator035.finalMatrices[n].m3);
-		// LOG_INFO("%f, %f, %f, %f", animator035.finalMatrices[n].m4, animator035.finalMatrices[n].m5, animator035.finalMatrices[n].m6, animator035.finalMatrices[n].m7);
-		// LOG_INFO("%f, %f, %f, %f", animator035.finalMatrices[n].m8, animator035.finalMatrices[n].m9, animator035.finalMatrices[n].m10, animator035.finalMatrices[n].m11);
-		// LOG_INFO("%f, %f, %f, %f", animator035.finalMatrices[n].m12, animator035.finalMatrices[n].m13, animator035.finalMatrices[n].m14, animator035.finalMatrices[n].m15);
-		// LOG_INFO("--------------");
-
 		R_Present();
 
 		if (IN_IsKeyPressed(GLFW_KEY_P)) {
 			Snd_PlayStream(&stream);
 
 			if (lid1 != UINT32_MAX) {
-				Light_RemoveSpotlight(lid1);
+				Light_RemovePointlight(lid1);
 				lid1 = UINT32_MAX;
 			}
 
@@ -369,9 +351,6 @@ int Engine_Run(int argc, const char** argv)
 		Texture_Bind(R_GetWhiteTexture(), 0);
 		Mesh_DrawInstances(R_GetCubeMesh());
 
-		Animator_Update(&animator035, frameTime);
-
-		R_UpdateAnimationBuffer(&animator035);
 		Model_Draw(&animModel, &animInstance, 0);
 
 		Framebuffer_UnBind();
@@ -409,8 +388,6 @@ int Engine_Run(int argc, const char** argv)
 
 	Model_Destroy(&mapModel);
 	Model_Destroy(&animModel);
-	Animation_Destroy(&anim035);
-	Animator_Destroy(&animator035);
 	Framebuffer_Destroy(&testFramebuffer);
 
 	Net_Close();

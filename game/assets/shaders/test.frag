@@ -115,8 +115,8 @@ in VP_Shared {
 
 void main()
 {
-	//vec3 lighting = CalcPointlights(pFragPos, pNormal);
-	//lighting += CalcSpotlights(pFragPos, pNormal);
+	vec3 lighting = CalcPointlights(pFragPos, pNormal);
+	lighting += CalcSpotlights(pFragPos, pNormal);
 
-	FRAG_COLOR = pInstanceColor * texture(uTexture, pUV);// * vec4(lighting, 1.0);
+	FRAG_COLOR = pInstanceColor * texture(uTexture, pUV) * vec4(lighting, 1.0);
 }

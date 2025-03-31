@@ -35,6 +35,11 @@ void Mat4_RotateQuat(mat4_t* mat, quat_t rotation)
 	glm_quat_rotate((GLM_MAT)mat, rotation.v, (GLM_MAT)mat);
 }
 
+void Mat4_QuatToMat4(quat_t quat, mat4_t* dest)
+{
+	glm_quat_mat4(quat.v, (GLM_MAT)dest);
+}
+
 void Mat4_Ortho(float left, float right, float bottom, float top, float nearZ, float farZ, mat4_t* dest)
 {
 	glm_ortho(left, right, bottom, top, nearZ, farZ, (GLM_MAT)dest);

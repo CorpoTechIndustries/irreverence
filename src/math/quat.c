@@ -58,6 +58,11 @@ void Quat_DivTo(quat_t v1, quat_t v2, quat_t* dest)
 	glm_quat_mul(v1.v, v2_inv.v, dest->v);
 }
 
+void Quat_Normalize(quat_t quat, quat_t* dest)
+{
+	glm_quat_normalize_to(quat.v, dest->v);
+}
+
 void Quat_AxisAngle(float angle, vec3_t axis, quat_t* dest)
 {
 	glm_quatv(dest->v, glm_rad(angle), axis.v);

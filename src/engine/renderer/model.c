@@ -81,12 +81,6 @@ static mesh_data_t ProcessMesh(const struct aiMesh* mesh)
 			vertex.tx = 0.0f;
 		}
 
-		for (size_t i = 0; i < MAX_MODEL_WEIGHT; i++) {
-			vertex.bones[i] = -1;
-		}
-
-		Sys_MemZero(vertex.weights, sizeof(vertex.weights));
-
 		meshdata.vertices[i] = vertex;
 	}
 
@@ -96,58 +90,6 @@ static mesh_data_t ProcessMesh(const struct aiMesh* mesh)
 			meshdata.indices[i * face->mNumIndices + j] = face->mIndices[j];
 		}
 	}
-
-	for (uint16_t i = 0; i < mesh->mNumBones; i++) {
-		const struct aiBone* bone = mesh->mBones[i];
-
-		bone_info_t boneInfo;
-		boneInfo.id = s_pModel->bones.count++;
-
-		if (bone->mName.length > 0) {
-			strncpy(boneInfo.name, bone->mName.data, MATH_MIN(bone->mName.length, MAX_BONEINFO_NAME_LENGTH));
-		} else {
-			Sys_MemZero(boneInfo.name, MAX_BONEINFO_NAME_LENGTH);
-		}
-
-		ConvertMat4(&bone->mOffsetMatrix, &boneInfo.offset);
-
-		Array_Push(s_pModel->bones.infos, boneInfo);
-
-		// LearnOpenGL uses a hashmap and a name check here to remove duplicates.. but why the fuck would there be duplicates?
-		// Using a hashmap will be extremely slow, besides, duplicate bones should be the problem of the model and its' format.
-
-		if (boneInfo.id == -1) {
-			LOG_ERROR("Couldn't get Bone Id from model \"%s\" at bone \"%s\"", s_pModelPath, bone->mName.data);
-			return (mesh_data_t){ false };
-		}
-
-		const struct aiVertexWeight* weights = bone->mWeights;
-		for (uint32_t j = 0; j < bone->mNumWeights; j++) {
-			uint32_t vertexId = weights[j].mVertexId;
-			float weight = weights[j].mWeight;
-
-			if (vertexId >= mesh->mNumVertices) {
-				LOG_ERROR("Bone Vertex Id is greater than the amount of vertices..?");
-				return (mesh_data_t){ false };
-			}
-
-			mesh_vertexmodel_t* boneWVertex = &meshdata.vertices[vertexId];
-
-			for (uint8_t k = 0; k < MAX_MODEL_WEIGHT; k++) {
-				if (boneWVertex->bones[k] == -1) {
-					boneWVertex->bones[k] = boneInfo.id;
-					boneWVertex->weights[k] = weight;
-					break;
-				}
-			}
-		}
-	}
-
-	// size_t count = Array_Size(meshdata.vertices);
-	// for (size_t i = 0; i < 500; i++) {
-	// 	mesh_vertexmodel_t* vertex = &meshdata.vertices[i];
-	// 	LOG_INFO("%i: %i, %i, %i, %i", i, vertex->b1, vertex->b2, vertex->b3, vertex->b4);
-	// }
 
 	return meshdata;
 }

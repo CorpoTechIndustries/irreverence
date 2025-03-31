@@ -16,8 +16,6 @@ bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t v
 		MODELMESH_POSITION,
 		MODELMESH_NORMAL,
 		MODELMESH_UV,
-		MODELMESH_BONEIDS,
-		MODELMESH_BONEWEIGHTS,
 		MODELMESH_COLOR,
 		MODELMESH_MODELMATRIX
 	};
@@ -64,14 +62,6 @@ bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t v
 	glEnableVertexArrayAttrib(mesh->id, MODELMESH_UV);
 	glVertexArrayAttribFormat(mesh->id, MODELMESH_UV, 2, GL_FLOAT, GL_FALSE, offsetof(mesh_vertexmodel_t, tx));
 	glVertexArrayAttribBinding(mesh->id, MODELMESH_UV, 0);
-
-	glEnableVertexArrayAttrib(mesh->id, MODELMESH_BONEIDS);
-	glVertexArrayAttribFormat(mesh->id, MODELMESH_BONEIDS, 4, GL_INT, GL_FALSE, offsetof(mesh_vertexmodel_t, bones));
-	glVertexArrayAttribBinding(mesh->id, MODELMESH_BONEIDS, 0);
-
-	glEnableVertexArrayAttrib(mesh->id, MODELMESH_BONEWEIGHTS);
-	glVertexArrayAttribFormat(mesh->id, MODELMESH_BONEWEIGHTS, 4, GL_FLOAT, GL_FALSE, offsetof(mesh_vertexmodel_t, weights));
-	glVertexArrayAttribBinding(mesh->id, MODELMESH_BONEWEIGHTS, 0);
 
 	// Link Instance Buffer and Set Instance Buffer Layout
 	glVertexArrayVertexBuffer(mesh->id, 1, mesh->ibo, 0, sizeof(mesh_instancemodel_t));
