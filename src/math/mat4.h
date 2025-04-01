@@ -5,6 +5,8 @@
 #include <math/vec3.h>
 #include <math/quat.h>
 
+#include <stdalign.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -20,7 +22,7 @@ extern "C" {
 							0.0f, 0.0f, 0.0f, 0.0f }
 
 typedef union {
-	vec_t v[16];
+	alignas(16) vec_t v[16];
 
 	struct {
 		vec_t m0,  m1,  m2,  m3;
