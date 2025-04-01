@@ -22,9 +22,10 @@
                 "${workspaceFolder}/src/**",
 				"${workspaceFolder}/vendor/cglm/include",
 				"${workspaceFolder}/vendor/joltc/include",
-				"${workspaceFolder}/vendor/stb"
+				"${workspaceFolder}/vendor/stb",
+				"${workspaceFolder}/vendor/cimgui"
             ],
-            "defines": ["__USE_MISC", "PLATFORM_LINUX"],
+            "defines": ["__USE_MISC", "PLATFORM_LINUX", "CIMGUI_USE_OPENGL3", "CIMGUI_USE_GLFW"],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
             "cppStandard": "c++17",

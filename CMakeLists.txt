@@ -20,6 +20,12 @@ set(JOLTC_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/vendor/joltc/include)
 
 set(STB_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb)
 
+set(IMGUI_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/vendor/cimgui)
+set(IMGUI_BACKEND_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/vendor/cimgui/imgui/backends)
+
+# set(IMGUI_STATIC TRUE)
+add_subdirectory(vendor/cimgui)
+
 if (CMAKE_C_BYTE_ORDER EQUAL BIG_ENDIAN)
 	add_definitions(-DCPU_BIG_ENDIAN)
 else()

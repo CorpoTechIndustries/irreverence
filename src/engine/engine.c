@@ -31,6 +31,10 @@
 
 #include <platform/memory.h>
 
+#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
+#include <cimgui.h>
+#include <cimgui_impl.h>
+
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (action == GLFW_REPEAT) {
@@ -118,6 +122,17 @@ int Engine_Run(int argc, const char** argv)
 	glfwSetWindowSizeCallback(window, resize_callback);
 
 	glfwMakeContextCurrent(window);
+
+	igCreateContext(NULL);
+
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init(NULL);
+
+	ImGuiIO* io = igGetIO_Nil();
+	io->IniFilename = NULL;
+	io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+	bool show_demo = true;
 
 	if (!R_Init()) {
 		return EXIT_FAILURE;
@@ -236,6 +251,14 @@ int Engine_Run(int argc, const char** argv)
 		IN_Update();
 
 		glfwPollEvents();
+
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		igNewFrame();
+
+		if (show_demo) {
+			igShowDemoWindow(&show_demo);
+		}
 
 		{
 			int n = 0;
@@ -359,6 +382,10 @@ int Engine_Run(int argc, const char** argv)
 		Mesh_ClearInstances(R_GetCubeMesh());
 		Model_ClearInstances(&mapModel);
 
+		igRender();
+
+		ImGui_ImplOpenGL3_RenderDrawData(igGetDrawData());
+
 		glfwSwapBuffers(window);
 	}
 
@@ -399,6 +426,10 @@ int Engine_Run(int argc, const char** argv)
 	Snd_Destroy();
 
 	R_Destroy();
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	igDestroyContext(NULL);
 
 	glfwDestroyWindow(window);
 
