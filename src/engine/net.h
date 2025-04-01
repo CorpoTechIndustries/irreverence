@@ -22,7 +22,7 @@ void NetBuffer_WriteUInt16(net_buffer_t* buffer, uint16_t value);
 void NetBuffer_WriteUInt32(net_buffer_t* buffer, uint32_t value);
 void NetBuffer_WriteFloat(net_buffer_t* buffer, float value);
 
-typedef udp_address_t net_address_t;
+// typedef udp_address_t net_address_t;
 
 typedef enum {
 	NET_SERVER,
@@ -35,6 +35,11 @@ typedef enum {
 	NET_TYPE_BROADCAST,
 	NET_TYPE_IP
 } net_type_t;
+
+typedef struct {
+	udp_address_t address;
+	net_type_t type;
+} net_address_t;
 
 #define MAX_NET_PACKET_SIZE 1 << 16
 

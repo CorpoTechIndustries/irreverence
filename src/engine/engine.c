@@ -228,7 +228,7 @@ int Engine_Run(int argc, const char** argv)
 
 	g_GameExports.pGameInit();
 
-	Net_Setup(true);
+	Net_Setup(false);
 
 	net_address_t local = Net_LocalAddress(27015);
 
@@ -269,7 +269,7 @@ int Engine_Run(int argc, const char** argv)
 		if (IN_IsKeyPressed(GLFW_KEY_5)) {
 			int n = 125;
 
-			Net_SendPacket(NET_CLIENT, &n, sizeof(n), local);
+			Net_SendLoopbackPacket(NET_CLIENT, &n, sizeof(n), local);
 		}
 
 		prevTime = curTime;

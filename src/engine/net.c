@@ -4,6 +4,9 @@
 #include <engine/log.h>
 #include <engine/cvar.h>
 
+#include <platform/memory.h>
+#include <math/common.h>
+
 void NetBuffer_Create(net_buffer_t* buffer, size_t max_size)
 {
 	Buffer_Create(buffer, max_size);
@@ -65,7 +68,23 @@ void NetBuffer_WriteFloat(net_buffer_t* buffer, float value)
 	NetBuffer_WriteUInt32(buffer, *(uint32_t*)&value);
 }
 
-static udp_socket_t s_Sockets[NET_COUNT] = {0};
+static udp_socket_t s_Sockets[NET_COUNT] = { -1, -1 };
+static net_address_t s_SocketAddresses[NET_CLIENT] = {0};
+
+#define MAX_LOOPBACK_MESSAGES 5
+
+struct loopmsg_t {
+	char data[MAX_NET_PACKET_SIZE];
+	int len;
+};
+
+struct loopback_t {
+	struct loopmsg_t messages[MAX_LOOPBACK_MESSAGES];
+	int get_count;
+	int send_count;
+};
+
+struct loopback_t s_Loopbacks[NET_COUNT] = {0};
 
 MAKE_CVAR_INT(sv_port, 27015);
 
@@ -117,6 +136,8 @@ bool Net_Setup(bool multiplayer)
 				return false;
 			}
 
+			s_SocketAddresses[NET_SERVER] = (net_address_t){ local, 0 };
+
 			LOG_INFO("Bound server on port %u", sv_port.value.as_int);
 		}
 
@@ -135,6 +156,8 @@ bool Net_Setup(bool multiplayer)
 			udp_address_t address;
 			Sys_UDPGetAddress(s_Sockets[NET_CLIENT], &address);
 
+			s_SocketAddresses[NET_CLIENT] = (net_address_t){ address, 0 };
+
 			uint16_t port;
 			Sys_UDPAddressToString(address, &port);
 
@@ -144,8 +167,11 @@ bool Net_Setup(bool multiplayer)
 		return true;
 	}
 
+	for (size_t i = 0; i < NET_COUNT; i++) {
+		if (s_Sockets[i] < 0) {
+			continue;
+		}
 
-	for (size_t i = 0; NET_COUNT; i++) {
 		Sys_UDPDestroy(s_Sockets[i]);
 		s_Sockets[i] = -1;
 	}
@@ -156,25 +182,79 @@ bool Net_Setup(bool multiplayer)
 
 int Net_SendPacket(net_source_t source, const void* data, size_t size, net_address_t address)
 {
-	return Sys_UDPSendTo(s_Sockets[source], address, data, size);
+	if (address.type == NET_TYPE_LOOPBACK) {
+		return Net_SendLoopbackPacket(source, data, size, address);
+	}
+
+	if (s_Sockets[source] < 0) {
+		return -1;
+	}
+
+	return Sys_UDPSendTo(s_Sockets[source], address.address, data, size);
+}
+
+int Net_SendLoopbackPacket(net_source_t source, const void* data, size_t size, net_address_t adress)
+{
+	struct loopback_t* loopback = &s_Loopbacks[source ^ 1];
+
+	int i = loopback->send_count & (MAX_LOOPBACK_MESSAGES - 1);
+	loopback->send_count++;
+
+	Sys_MemCpy(data, loopback->messages[i].data, size);
+	loopback->messages[i].len = size;
+
+	return size;
 }
 
 int Net_ReadPacket(net_source_t source, void* data, size_t size, net_address_t* from)
 {
-	return Sys_UDPRecvFrom(s_Sockets[source], from, data, size);
+	int res = Net_ReadLoopbackPacket(source, data, size, from);
+
+	if (res > -1) {
+		return res;
+	}
+
+	if (s_Sockets[source] < 0) {
+		return -1;
+	}
+
+	return Sys_UDPRecvFrom(s_Sockets[source], &from->address, data, size);
+}
+
+int Net_ReadLoopbackPacket(net_source_t source, void* data, size_t size, net_address_t* from)
+{
+	struct loopback_t* loopback = &s_Loopbacks[source];
+
+	if (loopback->send_count - loopback->get_count > MAX_LOOPBACK_MESSAGES) {
+		loopback->get_count = loopback->send_count - MAX_LOOPBACK_MESSAGES;
+	}
+
+	if (loopback->get_count >= loopback->send_count) {
+		return -1;
+	}
+
+	int i = loopback->get_count & (MAX_LOOPBACK_MESSAGES - 1);
+	loopback->get_count++;
+
+	from->address = s_SocketAddresses[source ^ 1].address;
+	from->type = NET_TYPE_LOOPBACK;
+
+	Sys_MemCpy(loopback->messages[i].data, data, MATH_MIN(size, loopback->messages[i].len));
+
+	return MATH_MIN(size, loopback->messages[i].len);
 }
 
 net_address_t Net_LocalAddress(uint16_t port)
 {
-	return Sys_UDPLocalAddress(port);
+	return (net_address_t){ Sys_UDPLocalAddress(port), NET_TYPE_IP };
 }
 
 net_address_t Net_Address(const char* address, uint16_t port)
 {
-	return Sys_UDPAddress(address, port);
+	return (net_address_t){ Sys_UDPAddress(address, port), NET_TYPE_IP };
 }
 
 const char* Net_AddressToString(net_address_t address, uint16_t* port)
 {
-	return Sys_UDPAddressToString(address, port);
+	return Sys_UDPAddressToString(address.address, port);
 }
