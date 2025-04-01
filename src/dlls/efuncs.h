@@ -13,3 +13,6 @@ extern engine_functions_t g_EngineFuncs;
 #define CREATE_ENTITY_FROM_NAME(name) (g_EngineFuncs.pEdictCreateName)(name)
 #define GET_ENTITY(id) (g_EngineFuncs.pEdictGet)(id)
 #define FREE_ENTITY(id) (g_EngineFuncs.pEdictFree)(id)
+
+#define REGISTER_CVAR(cvar) (g_EngineFuncs.pRegisterCVar)(cvar)
+#define GET_CVAR(name) (g_EngineFuncs.pGetCVar)(cvar)

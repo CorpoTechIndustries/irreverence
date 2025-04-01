@@ -18,6 +18,8 @@ public:
 
 LINK_ENTITY_TO_CLASS(CTest, npc_test);
 
+MAKE_CVAR_FLOAT(sv_test, 0.5f);
+
 bool GameDLLInit(engine_functions_t* functions, game_exports_t* exports, int interface_version)
 {
 	if (interface_version != ENGINE_INTERFACE_VERSION) {
@@ -25,6 +27,8 @@ bool GameDLLInit(engine_functions_t* functions, game_exports_t* exports, int int
 	}
 
 	g_EngineFuncs = *functions;
+
+	REGISTER_CVAR(&sv_test);
 
 	exports->pGameInit = []() {};
 	exports->pGameClose = []() {};

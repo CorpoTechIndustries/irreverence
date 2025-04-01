@@ -26,13 +26,13 @@ typedef struct {
 } cvar_t;
 
 #define MAKE_CVAR_INT(__name, __default) \
-cvar_t __name = { #__name, CVAR_INT, .value.as_int = __default }
+cvar_t __name = { .name = #__name, .type = CVAR_INT, .value = { .as_int = __default } }
 #define MAKE_CVAR_FLOAT(__name, __default) \
-cvar_t __name = { #__name, CVAR_FLOAT, .value.as_float = __default }
+cvar_t __name = { .name = #__name, .type = CVAR_FLOAT, .value = { .as_float = __default } }
 #define MAKE_CVAR_BOOL(__name, __default) \
-cvar_t __name = { #__name, CVAR_BOOL, .value.as_bool = __default }
+cvar_t __name = { .name = #__name, .type = CVAR_BOOL, .value = { .as_bool = __default } }
 #define MAKE_CVAR_STRING(__name, __default) \
-cvar_t __name = { #__name, CVAR_STRING, .value.as_string = __default }
+cvar_t __name = { .name = #__name, .type = CVAR_STRING, .value = { .as_string = __default } }
 
 
 

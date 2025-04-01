@@ -1,6 +1,7 @@
 #pragma once
 
 #include <public/edict.h>
+#include <public/cvar.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,6 +20,9 @@ typedef struct {
 	edict_t*(*pEdictCreateName)(const char* className);
 	edict_t*(*pEdictGet)(size_t index);
 	void(*pEdictFree)(size_t index);
+
+	void(*pRegisterCVar)(cvar_t* cvar);
+	cvar_t*(*pGetCVar)(const char* name);
 } engine_functions_t;
 
 // Functions exported by the game dll

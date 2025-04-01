@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <public/cvar.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,6 +15,8 @@ typedef struct {
 	void(*pError)(const char* fmt, ...);
 	void(*pFatal)(const char* fmt, ...);
 
+	void(*pRegisterCVar)(cvar_t* cvar);
+	cvar_t*(*pGetCVar)(const char* name);
 } client_functions_t;
 
 typedef struct {

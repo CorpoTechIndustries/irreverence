@@ -8,3 +8,6 @@ extern client_functions_t g_ClientFuncs;
 #define WARNING(fmt, ...) (g_ClientFuncs.pWarning)(fmt __VA_OPT__(,) __VA_ARGS__)
 #define ERROR(fmt, ...) (g_ClientFuncs.pError)(fmt __VA_OPT__(,) __VA_ARGS__)
 #define FATAL(fmt, ...) (g_ClientFuncs.pFatal)(fmt __VA_OPT__(,) __VA_ARGS__)
+
+#define REGISTER_CVAR(cvar) (g_ClientFuncs.pRegisterCVar)(cvar)
+#define GET_CVAR(name) (g_ClientFuncs.pGetCVar)(name)

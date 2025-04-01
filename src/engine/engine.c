@@ -243,6 +243,13 @@ int Engine_Run(int argc, const char** argv)
 
 	g_GameExports.pGameInit();
 
+	#ifndef ENGINE_DEDICATED
+	g_ClientExports.pInit();
+	#endif
+
+	LOG_INFO("sv_test = %f", CVar_GetFloat("sv_test"));
+	LOG_INFO("cl_test = %f", CVar_GetFloat("cl_test"));
+
 	Net_Setup(false);
 
 	net_address_t local = Net_LocalAddress(27015);
@@ -488,6 +495,9 @@ static bool setup_game()
 	funcs.pEdictGet = ED_Get;
 	funcs.pEdictFree = ED_Free;
 
+	funcs.pRegisterCVar = CVar_Register;
+	funcs.pGetCVar = CVar_Get;
+
 #ifdef PLATFORM_LINUX
 	const char* lib_name = "bin/game.so";
 #elif PLATFORM_WINDOWS
@@ -526,6 +536,9 @@ static bool setup_client()
 	funcs.pWarning = log_warning_wrapper;
 	funcs.pError = log_error_wrapper;
 	funcs.pFatal = log_fatal_wrapper;
+
+	funcs.pRegisterCVar = CVar_Register;
+	funcs.pGetCVar = CVar_Get;
 
 #ifdef PLATFORM_LINUX
 	const char* lib_name = "bin/client.so";
