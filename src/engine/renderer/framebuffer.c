@@ -48,7 +48,7 @@ bool Framebuffer_Init(
 	}
 
 	if (glCheckNamedFramebufferStatus(framebuffer->id, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-		LOG_ERROR("Couldn't create a Framebuffer. Something fucked up.");
+		LOG_ERROR("Couldn't create a framebuffer. Something fucked up.");
 		glDeleteFramebuffers(1, &framebuffer->id);
 
 		if (framebuffer->rbo) {

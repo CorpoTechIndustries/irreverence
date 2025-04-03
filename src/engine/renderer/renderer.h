@@ -2,12 +2,13 @@
 
 #include <engine/renderer/mesh.h>
 #include <engine/renderer/animation.h>
+#include <engine/renderer/material.h>
 #include <math/vec2.h>
 #include <math/vec3.h>
 
 #include <stdbool.h>
 
-typedef struct Texture texture_t;
+typedef struct texture texture_t;
 
 typedef uint32_t gapi_enum_t;
 
@@ -42,6 +43,8 @@ ivec2_t R_GetWindowSize();
 texture_t* R_GetMissingTexture();
 texture_t* R_GetWhiteTexture();
 texture_t* R_GetBlackTexture();
+
+material_t* R_GetWhiteMaterial();
 
 mesh_t* R_GetCubeMesh();
 

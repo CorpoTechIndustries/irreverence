@@ -103,12 +103,12 @@ static void InterpolateRotation(anim_bone_t* animbone, float anim_time, mat4_t* 
 	Mat4_QuatToMat4(finalRotation, dest);
 }
 
-void AnimationBone_Init(anim_bone_t* animbone, mat4_t* mat, bone_info_t* info, const void* channel)
+void AnimationBone_Init(anim_bone_t* animbone, bone_info_t* info, const void* channel)
 {
 	const struct aiNodeAnim* aichannel = channel;
 
 	animbone->boneInfo = info;
-	animbone->localTrans = mat;
+	animbone->localTrans = MAT4_IDENTITY;
 
 	animbone->translationCount = aichannel->mNumPositionKeys;
 	if (aichannel->mNumPositionKeys > 0) {
@@ -165,8 +165,8 @@ void AnimationBone_Update(anim_bone_t* animbone, float anim_time)
 	InterpolateRotation(animbone, anim_time, &rotation);
 	InterpolateScale(animbone, anim_time, &scale);
 
-	Mat4_Mul(&translation, &rotation, animbone->localTrans);
-	Mat4_Mul(animbone->localTrans, &scale, animbone->localTrans);
+	Mat4_Mul(&translation, &rotation, &animbone->localTrans);
+	Mat4_Mul(&animbone->localTrans, &scale, &animbone->localTrans);
 }
 
 void AnimationBone_Destroy(anim_bone_t* animbone)
@@ -230,7 +230,6 @@ static void ReadAnimationBones(animation_t* animation, const struct aiAnimation*
 	animation->bones.count = ai_anim->mNumChannels;	
 	
 	if (animation->bones.count > 0) {
-		animation->bones.transforms = Sys_Malloc(sizeof(mat4_t) * animation->bones.count);
 		animation->bones.list = Sys_Malloc(sizeof(anim_bone_t) * animation->bones.count);	
 	}
 
@@ -248,19 +247,16 @@ static void ReadAnimationBones(animation_t* animation, const struct aiAnimation*
 				strncpy(newBoneinfo.name, ainode_anim->mNodeName.data, MATH_MIN(ainode_anim->mNodeName.length, MAX_BONEINFO_NAME_LENGTH));
 			}
 
-			model->bones.offsets[newBoneinfo.id] = MAT4_IDENTITY;
-			newBoneinfo.offset = &model->bones.offsets[newBoneinfo.id];
+			newBoneinfo.offset = MAT4_IDENTITY;
 
 			Array_Push(model->bones.list, newBoneinfo);
 			
 			boneinfo = &model->bones.list[newBoneinfo.id];
 
 			model->bones.count++;
-			
-			LOG_INFO("Found New Bone Info on Animation, %s, %i", newBoneinfo.name, newBoneinfo.id);
 		}
 
-		AnimationBone_Init(&animation->bones.list[i], &animation->bones.transforms[i], boneinfo, ainode_anim);
+		AnimationBone_Init(&animation->bones.list[i], boneinfo, ainode_anim);
 	}
 }
 
@@ -338,9 +334,6 @@ void Animation_Destroy(animation_t* animation)
 		
 		Sys_Free(animation->bones.list);
 		animation->bones.list = NULL;
-
-		Sys_Free(animation->bones.transforms);
-		animation->bones.transforms = NULL;
 	}
 
 	FreeHierarchData(&animation->rootNode);
@@ -355,7 +348,7 @@ static void CalcBoneTransform(animator_t* animator, const anim_node_t* node, mat
 
 	if (animbone) {
 		AnimationBone_Update(animbone, animator->time);
-		nodeTransform = *animbone->localTrans;
+		nodeTransform = animbone->localTrans;
 		boneinfo = animbone->boneInfo;
 	} else {
 		nodeTransform = node->transform;
@@ -365,7 +358,7 @@ static void CalcBoneTransform(animator_t* animator, const anim_node_t* node, mat
 	Mat4_Mul(&parent_transform, &nodeTransform, &globalTransform);
 
 	if (boneinfo) {
-		Mat4_Mul(&globalTransform, boneinfo->offset, &animator->finalMatrices[boneinfo->id]);
+		Mat4_Mul(&globalTransform, &boneinfo->offset, &animator->finalMatrices[boneinfo->id]);
 	}
 
 	for (uint32_t i = 0; i < node->childrenCount; i++) {

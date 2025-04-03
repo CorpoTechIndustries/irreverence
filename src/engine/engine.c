@@ -379,15 +379,16 @@ int Engine_Run(int argc, const char** argv)
 		vec3_t coobeAxis = VEC3_ZERO;
 		Quat_GetAxisAngle(&coobe->rotation, &coobeAngle, &coobeAxis);
 		Mat4_Rotate(&coobeInstance.model, coobeAngle, coobeAxis);
-		Mesh_AddInstance(R_GetCubeMesh(), &coobeInstance);
+		Mesh_AddInstance(R_GetCubeMesh(), &coobeInstance, R_GetWhiteMaterial());
+
+		Material_Bind(R_GetWhiteMaterial());
+		
+		Mesh_DrawInstances(R_GetCubeMesh(), R_GetWhiteMaterial());
 
 		Model_AddInstance(&mapModel, &mapInstance);
 		Model_DrawInstances(&mapModel);
 
-		Texture_Bind(R_GetWhiteTexture(), 0);
-		Mesh_DrawInstances(R_GetCubeMesh());
 
-		
 		Animator_Update(&animAnimator, frameTime);
 		R_UpdateAnimationBuffer(&animAnimator);
 		Shader_Bind(&animatedShader);
@@ -396,7 +397,7 @@ int Engine_Run(int argc, const char** argv)
 		Framebuffer_UnBind();
 		Framebuffer_CopyTo(&testFramebuffer, NULL, false);
 
-		Mesh_ClearInstances(R_GetCubeMesh());
+		Mesh_ClearInstances(R_GetCubeMesh(), R_GetWhiteMaterial());
 		Model_ClearInstances(&mapModel);
 
 		igRender();

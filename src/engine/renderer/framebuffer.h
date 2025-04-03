@@ -13,7 +13,7 @@ typedef struct {
 	gapi_enum_t type;
 } framebuffer_attachment_t;
 
-typedef struct Framebuffer {
+typedef struct framebuffer {
 	uint32_t id;
 	uint32_t rbo;
 	uint32_t width;

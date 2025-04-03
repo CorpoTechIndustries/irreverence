@@ -10,6 +10,57 @@
 
 #define SetMatrixLayout(vertexarray, location, offset) for (unsigned int i = 0; i < 4; i++) { unsigned int mat_offset = location + i; glEnableVertexArrayAttrib(vertexarray, mat_offset); glVertexArrayAttribFormat(vertexarray, mat_offset, 4, GL_FLOAT, GL_FALSE, offset + sizeof(float) * 4 * i); glVertexArrayAttribBinding(vertexarray, mat_offset, 1); }
 
+struct material_instlist_node {
+	uint32_t key; // Material Id
+	mesh_instlist_t list;
+	struct material_instlist_node* next;
+};
+
+static struct material_instlist_node* FindMaterialInstList(mesh_t* mesh, uint32_t key)
+{
+	struct material_instlist_node* node = mesh->instListHead;
+
+	if (!node) {
+		return NULL;
+	}
+
+	do {
+		if (node->key == key) {
+			return node;
+		}
+		
+	} while (node = node->next);
+
+	return NULL;
+}
+
+static struct material_instlist_node* MakeMaterialInstList(mesh_t* mesh, uint32_t key)
+{
+	struct material_instlist_node* node = mesh->instListHead;
+
+	if (!node) {
+		node = Sys_Malloc(sizeof(struct material_instlist_node));
+		node->key = key;
+		node->list = (mesh_instlist_t) { 0 };
+		node->next = NULL;
+
+		mesh->instListHead = node;
+
+		return node;
+	}
+
+	while (node->next) {
+		node = node->next;
+	}
+
+	node->next = Sys_Malloc(sizeof(struct material_instlist_node));
+	node->next->key = key;
+	node->next->list = (mesh_instlist_t) { 0 };
+	node->next->next = NULL;
+
+	return node->next;
+}
+
 bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t vertex_count, const uint32_t* indices, uint32_t index_count)
 {
 	enum {
@@ -23,10 +74,8 @@ bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t v
 	mesh->vertexCount = vertex_count;
 	mesh->indexCount = index_count;
 
-	mesh->instances.array = NULL;
-	mesh->instances.stride = sizeof(mesh_instancemodel_t);
-	mesh->instances.count = 0;
-	mesh->instances.capacity = 0;
+	mesh->instStride = sizeof(mesh_instancemodel_t);
+	mesh->instListHead = NULL;
 
 	size_t vertexSize = vertex_count * sizeof(mesh_vertexmodel_t);
 	size_t indexSize = index_count * sizeof(uint32_t);
@@ -91,10 +140,8 @@ bool Mesh_InitAnimated(mesh_t* mesh, const mesh_vertexanimated_t* vertices, uint
 	mesh->vertexCount = vertex_count;
 	mesh->indexCount = index_count;
 
-	mesh->instances.array = NULL;
-	mesh->instances.stride = sizeof(mesh_instancemodel_t);
-	mesh->instances.count = 0;
-	mesh->instances.capacity = 0;
+	mesh->instStride = sizeof(mesh_instancemodel_t);
+	mesh->instListHead = NULL;
 
 	size_t vertexSize = vertex_count * sizeof(mesh_vertexanimated_t);
 	size_t indexSize = index_count * sizeof(uint32_t);
@@ -172,46 +219,64 @@ void Mesh_Destroy(mesh_t* mesh)
 	glDeleteBuffers(1, &mesh->ebo);
 	glDeleteBuffers(1, &mesh->ibo);
 
-	if (mesh->instances.array) {
-		Sys_Free(mesh->instances.array);
-		mesh->instances.array = NULL;
+
+	struct material_instlist_node* instlist_node = mesh->instListHead;
+
+	if (instlist_node) {
+		struct material_instlist_node* instlist_next = NULL;
+
+		do {
+			instlist_next = instlist_node->next;
+
+			Sys_Free(instlist_node->list.array);
+			Sys_Free(instlist_node);
+		} while (instlist_node = instlist_next);
 	}
 }
 
-void Mesh_AddInstance(mesh_t* mesh, const void* data)
+void Mesh_AddInstance(mesh_t* mesh, const void* data, material_t* material)
 {
-	if (mesh->instances.stride == 0) {
+	if (mesh->instStride == 0) {
 		return;
 	}
 
-	if (!mesh->instances.array) {
-		mesh->instances.array = Sys_Calloc(mesh->instances.stride);
-		mesh->instances.capacity = 1;
+	struct material_instlist_node* instlist_node = FindMaterialInstList(mesh, material->id);
+
+	if (!instlist_node) {
+		instlist_node = MakeMaterialInstList(mesh, material->id);
 	}
 
-	if (mesh->instances.count >= mesh->instances.capacity) {
-		mesh->instances.capacity *= 2;
-		mesh->instances.array = Sys_ReAlloc(mesh->instances.array, mesh->instances.capacity * mesh->instances.stride);
+	mesh_instlist_t* instlist = &instlist_node->list;
+
+	if (!instlist->array) {
+		instlist->array = Sys_Calloc(mesh->instStride);
+		instlist->capacity = 1;
+	}
+
+	if (instlist->count >= instlist->capacity) {
+		instlist->capacity *= 2;
+		instlist->array = Sys_ReAlloc(instlist->array, instlist->capacity * mesh->instStride);
 	}
 
 	uint8_t* data_c = (uint8_t*)data;
-	uint8_t* instance_c = mesh->instances.array + mesh->instances.count * mesh->instances.stride;
-	for (uint32_t i = 0; i < mesh->instances.stride; i++) {
+	uint8_t* instance_c = instlist->array + instlist->count * mesh->instStride;
+	for (uint32_t i = 0; i < mesh->instStride; i++) {
 		instance_c[i] = data_c[i];
 	}
 
-	mesh->instances.count++;
+	instlist->count++;
 }
 
-void Mesh_ClearInstances(mesh_t* mesh)
+void Mesh_ClearInstances(mesh_t* mesh, material_t* material)
 {
 	// Yea, this is all it does. We don't need to memset because the data will be overriden either way.
-	mesh->instances.count = 0;
+	struct material_instlist_node* instlist_node = FindMaterialInstList(mesh, material->id);
+	instlist_node->list.count = 0;
 }
 
 void Mesh_Draw(mesh_t* mesh, const void* data)
 {
-	glNamedBufferData(mesh->ibo, mesh->instances.stride, data, GL_DYNAMIC_DRAW);
+	glNamedBufferData(mesh->ibo, mesh->instStride, data, GL_DYNAMIC_DRAW);
 
 	if (mesh->ebo) {
 		glBindVertexArray(mesh->id);
@@ -224,17 +289,20 @@ void Mesh_Draw(mesh_t* mesh, const void* data)
 	}
 }
 
-void Mesh_DrawInstances(mesh_t* mesh)
+void Mesh_DrawInstances(mesh_t* mesh, material_t* material)
 {
-	glNamedBufferData(mesh->ibo, mesh->instances.stride * mesh->instances.count, mesh->instances.array, GL_DYNAMIC_DRAW);
+	struct material_instlist_node* instlist_node = FindMaterialInstList(mesh, material->id);
+	mesh_instlist_t* instlist = &instlist_node->list;
+
+	glNamedBufferData(mesh->ibo, mesh->instStride * instlist->count, instlist->array, GL_DYNAMIC_DRAW);
 
 	if (mesh->ebo) {
 		glBindVertexArray(mesh->id);
-		glDrawElementsInstanced(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, NULL, mesh->instances.count);
+		glDrawElementsInstanced(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, NULL, instlist->count);
 		glBindVertexArray(0);
 	} else {
 		glBindVertexArray(mesh->id);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, mesh->vertexCount, mesh->instances.count);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, mesh->vertexCount, instlist->count);
 		glBindVertexArray(0);
 	}
 }

@@ -9,10 +9,9 @@
 #include <stdalign.h>
 
 #define MAX_ANIM_NODE_NAME_LENGTH 32
-#define MAX_ANIM_BONE_NAME_LENGTH 32
 
-typedef struct BoneInfo bone_info_t;
-typedef struct Model model_t;
+typedef struct bone_info bone_info_t;
+typedef struct model model_t;
 
 typedef struct {
 	vec3_t val;
@@ -25,7 +24,7 @@ typedef struct {
 } keyframe_quat_t;
 
 typedef struct {
-	mat4_t* localTrans;
+	mat4_t localTrans;
 	bone_info_t* boneInfo;
 	keyframe_vec3_t* translations;
 	keyframe_vec3_t* scales;
@@ -35,9 +34,9 @@ typedef struct {
 	uint32_t rotationCount;
 } anim_bone_t;
 
-typedef struct AnimationNode {
+typedef struct anim_node {
 	mat4_t transform;
-	struct AnimationNode* childrens;
+	struct anim_node* childrens;
 	uint32_t childrenCount;
 	char name[MAX_ANIM_NODE_NAME_LENGTH];
 } anim_node_t;
@@ -49,7 +48,6 @@ typedef struct {
 	model_t* model;
 	struct {
 		anim_bone_t* list;
-		mat4_t* transforms;
 		uint32_t count;
 	} bones;
 } animation_t; // Will be stored on model_t
@@ -61,7 +59,7 @@ typedef struct {
 	float frametime;
 } animator_t;
 
-void AnimationBone_Init(anim_bone_t* animbone, mat4_t* mat, bone_info_t* info, const void* channel);
+void AnimationBone_Init(anim_bone_t* animbone, bone_info_t* info, const void* channel);
 void AnimationBone_Update(anim_bone_t* animbone, float anim_time);
 void AnimationBone_Destroy(anim_bone_t* animbone);
 

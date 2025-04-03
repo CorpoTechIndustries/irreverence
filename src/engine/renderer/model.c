@@ -1,4 +1,5 @@
 #include <engine/renderer/model.h>
+#include <engine/renderer/renderer.h>
 
 #include <engine/log.h>
 
@@ -165,16 +166,13 @@ static mesh_data_t ProcessMeshAnimated(const struct aiMesh* mesh)
 				strncpy(newBoneinfo.name, aibone->mName.data, MATH_MIN(aibone->mName.length, MAX_BONEINFO_NAME_LENGTH));
 			}
 
-			ConvertMat4(&aibone->mOffsetMatrix, &s_pModel->bones.offsets[newBoneinfo.id]);
-			newBoneinfo.offset = &s_pModel->bones.offsets[newBoneinfo.id];
+			ConvertMat4(&aibone->mOffsetMatrix, &newBoneinfo.offset);
 
 			boneId = newBoneinfo.id;
 
 			Array_Push(s_pModel->bones.list, newBoneinfo);
 
 			s_pModel->bones.count++;
-
-			LOG_INFO("Found Bone: %s, %i", newBoneinfo.name, newBoneinfo.id);
 		} else {
 			boneId = boneinfo->id;
 		}
@@ -262,7 +260,6 @@ bool Model_Init(model_t* model, const char* path, bool animated)
 	model->meshMaterials = NULL;
 	model->bones.count = 0;
 	model->bones.list = NULL;
-	model->bones.offsets = NULL;
 	
 	if (!path) return false;
 	
@@ -289,7 +286,6 @@ bool Model_Init(model_t* model, const char* path, bool animated)
 	
 	if (animated) {
 		model->bones.list = Array_Create(bone_info_t);
-		model->bones.offsets = Sys_Malloc(sizeof(mat4_t) * 255); // Allocate max amount of mat4s 
 	}
 
 	s_pModel = model;
@@ -346,11 +342,6 @@ void Model_Destroy(model_t* model)
 		Array_Destroy(model->bones.list);
 		model->bones.list = NULL;
 	}
-
-	if (model->bones.offsets) {
-		Sys_Free(model->bones.offsets);
-		model->bones.offsets = NULL;
-	}
 }
 
 void Model_AddInstance(model_t* model, const mesh_instancemodel_t* instance)
@@ -359,7 +350,7 @@ void Model_AddInstance(model_t* model, const mesh_instancemodel_t* instance)
 
 	uint32_t meshCount = (uint32_t)Array_Count(model->meshes);
 	for (uint32_t i = 0; i < meshCount; i++) {
-		Mesh_AddInstance(&model->meshes[i], instance);
+		Mesh_AddInstance(&model->meshes[i], instance, R_GetWhiteMaterial());
 	}
 }
 
@@ -369,7 +360,7 @@ void Model_ClearInstances(model_t* model)
 
 	uint32_t meshCount = (uint32_t)Array_Count(model->meshes);
 	for (uint32_t i = 0; i < meshCount; i++) {
-		Mesh_ClearInstances(&model->meshes[i]);
+		Mesh_ClearInstances(&model->meshes[i], R_GetWhiteMaterial());
 	}
 }
 
@@ -389,7 +380,7 @@ void Model_DrawInstances(model_t* model)
 
 	uint32_t meshCount = (uint32_t)Array_Count(model->meshes);
 	for (uint32_t i = 0; i < meshCount; i++) {
-		Mesh_DrawInstances(&model->meshes[i]);
+		Mesh_DrawInstances(&model->meshes[i], R_GetWhiteMaterial());
 	}
 }
 

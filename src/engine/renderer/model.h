@@ -10,19 +10,18 @@
 #define MAX_MODEL_WEIGHTS 4
 #define MAX_BONEINFO_NAME_LENGTH 32
 
-typedef struct BoneInfo {
-	mat4_t* offset;
+typedef struct bone_info {
+	mat4_t offset;
 	char name[MAX_BONEINFO_NAME_LENGTH];
 	uint8_t id;
 } bone_info_t;
 
-typedef struct Model {
+typedef struct model {
 	mesh_t* meshes;
 	material_t* meshMaterials;
 
 	struct {
 		bone_info_t* list;
-		mat4_t* offsets;
 		uint8_t count;
 	} bones;
 } model_t;

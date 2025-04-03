@@ -5,11 +5,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct Framebuffer framebuffer_t;
+typedef struct framebuffer framebuffer_t;
 
 #define MAX_TEXTURE_BINDS 16
 
-typedef struct Texture {
+typedef struct texture {
 	uint32_t id;
 	uint32_t width;
 	uint32_t height;

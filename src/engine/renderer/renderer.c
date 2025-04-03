@@ -81,6 +81,8 @@ static texture_t s_MissingTexture;
 static texture_t s_WhiteTexture;
 static texture_t s_BlackTexture;
 
+static material_t s_WhiteMaterial;
+
 static mesh_t s_CubeMesh;
 
 bool R_Init()
@@ -142,6 +144,9 @@ bool R_Init()
 	Texture_InitFromMemory(&s_BlackTexture, (const uint8_t*)&missingColor1, 1, 1, 3, false, false);
 	Texture_InitFromMemory(&s_WhiteTexture, (const uint8_t*)&whiteColor, 1, 1, 3, false, false);
 
+	texture_t* whiteMaterialTex[] = { &s_WhiteTexture };
+	Material_Init(&s_WhiteMaterial, whiteMaterialTex, 1, 0);
+
 	const mesh_vertexmodel_t cubeVertices[] = {
 		{ -1.0f, 1.0f, -1.0f,		0.0f, 1.0f, 0.0f,		1.0f, 1.0f },
 		{ 1.0f, 1.0f, 1.0f,			0.0f, 1.0f, 0.0f,		0.0f, 0.0f },
@@ -182,6 +187,8 @@ void R_Destroy()
 	Texture_Destroy(&s_MissingTexture);
 	Texture_Destroy(&s_WhiteTexture);
 	Texture_Destroy(&s_BlackTexture);
+
+	Material_Destroy(&s_WhiteMaterial);
 
 	Mesh_Destroy(&s_CubeMesh);
 
@@ -285,6 +292,11 @@ texture_t* R_GetWhiteTexture()
 texture_t* R_GetBlackTexture()
 {
 	return &s_BlackTexture;
+}
+
+material_t* R_GetWhiteMaterial()
+{
+	return &s_WhiteMaterial;
 }
 
 mesh_t* R_GetCubeMesh()

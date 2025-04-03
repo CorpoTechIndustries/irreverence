@@ -1,12 +1,13 @@
 #pragma once
 
-#include <engine/renderer/texture.h>
-
+#include <stdint.h>
 #include <stdbool.h>
 
 #define MAX_MATERIALS UINT32_MAX
 
 #define MAX_MATERIAL_TEXTURES 1
+
+typedef struct texture texture_t;
 
 typedef enum {
 	MATERIAL_TEXTURE_DIFFUSE

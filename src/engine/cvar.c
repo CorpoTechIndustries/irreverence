@@ -4,12 +4,12 @@
 
 #include <platform/memory.h>
 
-struct cvar_node_t {
+struct cvar_node {
 	cvar_t* cvar;
-	struct cvar_node_t* next;
+	struct cvar_node* next;
 };
 
-struct cvar_node_t* s_pCVarHead = NULL;
+struct cvar_node* s_pCVarHead = NULL;
 
 void CVar_Register(cvar_t* cvar)
 {
@@ -22,19 +22,19 @@ void CVar_Register(cvar_t* cvar)
 	}
 
 	if (!s_pCVarHead) {
-		s_pCVarHead = Sys_Calloc(sizeof(struct cvar_node_t));
+		s_pCVarHead = Sys_Calloc(sizeof(struct cvar_node));
 
 		s_pCVarHead->cvar = cvar;
 		return;
 	}
 
-	struct cvar_node_t* node = s_pCVarHead;
+	struct cvar_node* node = s_pCVarHead;
 
 	while (node->next) {
 		node = node->next;
 	}
 
-	struct cvar_node_t* new_node = Sys_Calloc(sizeof(struct cvar_node_t));
+	struct cvar_node* new_node = Sys_Calloc(sizeof(struct cvar_node));
 	new_node->cvar = cvar;
 
 	node->next = new_node;
@@ -42,7 +42,7 @@ void CVar_Register(cvar_t* cvar)
 
 cvar_t* CVar_Get(const char* name)
 {
-	struct cvar_node_t* node = s_pCVarHead;
+	struct cvar_node* node = s_pCVarHead;
 
 	if (!node) {
 		return NULL;

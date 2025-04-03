@@ -4,6 +4,8 @@
 
 #include <math/vec3.h>
 
+#include <stdalign.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,7 +16,7 @@ extern "C" {
 #define NEW_QUATS(s) (quat_t){ s, s, s, s }
 
 typedef union {
-	vec_t v[4];
+	alignas(16) vec_t v[4];
 
 	struct {
 		vec_t x, y, z, w;

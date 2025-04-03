@@ -1,5 +1,6 @@
 #include <engine/renderer/material.h>
 
+#include <engine/renderer/texture.h>
 #include <engine/renderer/renderer.h>
 #include <engine/log.h>
 
@@ -17,8 +18,7 @@ bool Material_Init(material_t* material, texture_t** textures, uint8_t texture_c
 {
 	uint32_t id = UINT32_MAX;
 	for (uint32_t i = 0; i < MAX_MATERIALS; i++) {
-		bool full = BIT_ISSET(s_pFreeMaterials[i / FM_BIT_COUNT], i % FM_BIT_COUNT);
-		if (full) continue;
+		if (BIT_ISSET(s_pFreeMaterials[i / FM_BIT_COUNT], i % FM_BIT_COUNT)) continue;
 		
 		id = i;
 		break;
@@ -31,24 +31,22 @@ bool Material_Init(material_t* material, texture_t** textures, uint8_t texture_c
 
 	material->id = id;
 
-	BIT_TURNON(s_pFreeMaterials[id / FM_BIT_COUNT], id % FM_BIT_COUNT);
+	BIT_SETON(s_pFreeMaterials[id / FM_BIT_COUNT], id % FM_BIT_COUNT);
 
 	material->flags = flags;
 	
-	//Sys_MemZero(material->textures, sizeof(material->textures));
-	//for (uint8_t i = 0; i < MAX_MATERIAL_TEXTURES; i++) {
-	//	texture_t* texture = textures[i];
-	//	material->textures[i] = (texture == NULL) ? R_GetWhiteTexture() : texture;
-	//}
-
-	//LOG_INFO("%u", material->id);
+	Sys_MemZero(material->textures, sizeof(material->textures));
+	for (uint8_t i = 0; i < MAX_MATERIAL_TEXTURES; i++) {
+		texture_t* texture = textures[i];
+		material->textures[i] = (texture == NULL) ? R_GetWhiteTexture() : texture;
+	}
 
 	return true;
 }
 
 void Material_Destroy(material_t* material)
 {
-	BIT_TURNOFF(s_pFreeMaterials[material->id / FM_BIT_COUNT], material->id % FM_BIT_COUNT);
+	BIT_SETOFF(s_pFreeMaterials[material->id / FM_BIT_COUNT], material->id % FM_BIT_COUNT);
 }
 
 void Material_Bind(material_t* material)
