@@ -1,6 +1,6 @@
 #include <math/mat4.h>
 
-// #define CGLM_ALL_UNALIGNED
+//#define CGLM_ALL_UNALIGNED
 #include <cglm/cglm.h>
 
 #define GLM_MAT float(*)[4]

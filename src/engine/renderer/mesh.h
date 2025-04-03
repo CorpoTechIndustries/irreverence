@@ -12,6 +12,14 @@ typedef struct {
 } mesh_vertexmodel_t;
 
 typedef struct {
+	float x, y, z; 			// Position
+	float nx, ny, nz;		// Normal
+	float tx, ty;			// UV
+	uint8_t bones[4];
+	float weights[4];
+} mesh_vertexanimated_t;
+
+typedef struct {
 	float x, y, z; 		// Position
 	float tx, ty, tz;	// UV
 } mesh_vertexsky_t;
@@ -38,6 +46,7 @@ typedef struct {
 } mesh_t;
 
 bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t vertex_count, const uint32_t* indices, uint32_t index_count);
+bool Mesh_InitAnimated(mesh_t* mesh, const mesh_vertexanimated_t* vertices, uint32_t vertex_count, const uint32_t* indices, uint32_t index_count);
 bool Mesh_InitSkybox(mesh_t* mesh, const mesh_vertexsky_t* vertices, uint32_t vertex_count);
 void Mesh_Destroy(mesh_t* mesh);
 

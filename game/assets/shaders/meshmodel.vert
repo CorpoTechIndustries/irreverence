@@ -17,11 +17,6 @@ layout(std140, binding = 0) uniform GlobalUniform
 	mat4 Projection;
 } uGlobal;
 
-layout(std140, binding = 3) uniform AnimationUniform
-{
-	mat4 uBoneMatrices[255];
-};
-
 out VP_Shared {
 	vec3 pFragPos;
     vec3 pNormal;
@@ -35,7 +30,7 @@ void main()
 
 	gl_Position = uGlobal.Projection * uGlobal.View * vec4(pFragPos, 1.0);
 
-	pNormal = mat3(transpose(inverse(aInstanceModel))) * aNormal;
+	pNormal = transpose(mat3(inverse(aInstanceModel))) * aNormal;
 	pUV = aUV;
 
 	pInstanceColor = aInstanceColor;

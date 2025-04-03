@@ -76,6 +76,82 @@ bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t v
 	return true;
 }
 
+bool Mesh_InitAnimated(mesh_t* mesh, const mesh_vertexanimated_t* vertices, uint32_t vertex_count, const uint32_t* indices, uint32_t index_count)
+{
+	enum {
+		MODELMESH_POSITION,
+		MODELMESH_NORMAL,
+		MODELMESH_UV,
+		MODELMESH_BONES,
+		MODELMESH_WEIGHTS,
+		MODELMESH_COLOR,
+		MODELMESH_MODELMATRIX
+	};
+
+	mesh->vertexCount = vertex_count;
+	mesh->indexCount = index_count;
+
+	mesh->instances.array = NULL;
+	mesh->instances.stride = sizeof(mesh_instancemodel_t);
+	mesh->instances.count = 0;
+	mesh->instances.capacity = 0;
+
+	size_t vertexSize = vertex_count * sizeof(mesh_vertexanimated_t);
+	size_t indexSize = index_count * sizeof(uint32_t);
+
+	// Create OpenGL Objects
+	glCreateBuffers(1, &mesh->vbo);
+	glNamedBufferStorage(mesh->vbo, vertexSize, vertices, GL_DYNAMIC_STORAGE_BIT);
+
+	glDisable(GL_DEBUG_OUTPUT);
+	glCreateBuffers(1, &mesh->ibo);
+	glNamedBufferStorage(mesh->ibo, 0, NULL, GL_DYNAMIC_STORAGE_BIT);
+	glEnable(GL_DEBUG_OUTPUT);
+
+	glCreateBuffers(1, &mesh->ebo);
+	glNamedBufferStorage(mesh->ebo, indexSize, indices, GL_DYNAMIC_STORAGE_BIT);
+
+	glCreateVertexArrays(1, &mesh->id);
+
+	// Link Element Buffer
+	glVertexArrayElementBuffer(mesh->id, mesh->ebo);
+
+	// Link Vertex Buffer and Set Vertex Buffer Layout
+	glVertexArrayVertexBuffer(mesh->id, 0, mesh->vbo, 0, sizeof(mesh_vertexanimated_t));
+
+	glEnableVertexArrayAttrib(mesh->id, MODELMESH_POSITION);
+	glVertexArrayAttribFormat(mesh->id, MODELMESH_POSITION, 3, GL_FLOAT, GL_FALSE, 0);
+	glVertexArrayAttribBinding(mesh->id, MODELMESH_POSITION, 0);
+
+	glEnableVertexArrayAttrib(mesh->id, MODELMESH_NORMAL);
+	glVertexArrayAttribFormat(mesh->id, MODELMESH_NORMAL, 3, GL_FLOAT, GL_FALSE, offsetof(mesh_vertexanimated_t, nx));
+	glVertexArrayAttribBinding(mesh->id, MODELMESH_NORMAL, 0);
+
+	glEnableVertexArrayAttrib(mesh->id, MODELMESH_UV);
+	glVertexArrayAttribFormat(mesh->id, MODELMESH_UV, 2, GL_FLOAT, GL_FALSE, offsetof(mesh_vertexanimated_t, tx));
+	glVertexArrayAttribBinding(mesh->id, MODELMESH_UV, 0);
+
+	glEnableVertexArrayAttrib(mesh->id, MODELMESH_BONES);
+	glVertexArrayAttribIFormat(mesh->id, MODELMESH_BONES, 1, GL_UNSIGNED_INT, offsetof(mesh_vertexanimated_t, bones));
+	glVertexArrayAttribBinding(mesh->id, MODELMESH_BONES, 0);
+	
+	glEnableVertexArrayAttrib(mesh->id, MODELMESH_WEIGHTS);
+	glVertexArrayAttribFormat(mesh->id, MODELMESH_WEIGHTS, 4, GL_FLOAT, GL_FALSE, offsetof(mesh_vertexanimated_t, weights));
+	glVertexArrayAttribBinding(mesh->id, MODELMESH_WEIGHTS, 0);
+
+	// Link Instance Buffer and Set Instance Buffer Layout
+	glVertexArrayVertexBuffer(mesh->id, 1, mesh->ibo, 0, sizeof(mesh_instancemodel_t));
+	glVertexArrayBindingDivisor(mesh->id, 1, 1);
+
+	glEnableVertexArrayAttrib(mesh->id, MODELMESH_COLOR);
+	glVertexArrayAttribFormat(mesh->id, MODELMESH_COLOR, 4, GL_FLOAT, GL_FALSE, 0);
+	glVertexArrayAttribBinding(mesh->id, MODELMESH_COLOR, 1);
+
+	SetMatrixLayout(mesh->id, MODELMESH_MODELMATRIX, offsetof(mesh_instancemodel_t, model));
+
+	return true;
+}
+
 bool Mesh_InitSkybox(mesh_t* mesh, const mesh_vertexsky_t* vertices, uint32_t vertex_count)
 {
 

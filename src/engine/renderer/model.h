@@ -7,13 +7,13 @@
 
 #define MAX_MODEL_SKINS 1
 #define MAX_MODEL_BONES UINT8_MAX
-#define MAX_MODEL_WEIGHT 4
+#define MAX_MODEL_WEIGHTS 4
 #define MAX_BONEINFO_NAME_LENGTH 32
 
 typedef struct BoneInfo {
+	mat4_t* offset;
 	char name[MAX_BONEINFO_NAME_LENGTH];
-	mat4_t offset;
-	int32_t id;
+	uint8_t id;
 } bone_info_t;
 
 typedef struct Model {
@@ -21,12 +21,13 @@ typedef struct Model {
 	material_t* meshMaterials;
 
 	struct {
-		bone_info_t* infos;
-		uint32_t count;
+		bone_info_t* list;
+		mat4_t* offsets;
+		uint8_t count;
 	} bones;
 } model_t;
 
-bool Model_Init(model_t* model, const char* path);
+bool Model_Init(model_t* model, const char* path, bool animated);
 bool Model_InitFromMeshes(model_t* model, mesh_t* meshes, uint32_t mesh_count);
 void Model_Destroy(model_t* model);
 

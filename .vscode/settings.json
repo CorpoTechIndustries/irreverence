@@ -56,8 +56,15 @@
         "sort.h": "c",
         "chrono": "c",
         "typeinfo": "c",
-        "postprocess.h": "c"
+        "postprocess.h": "c",
+        "cstring": "c",
+        "common.h": "c",
+        "cstddef": "c",
+        "functional": "c",
+        "tuple": "c",
+        "type_traits": "c"
     },
     "editor.insertSpaces": false,
-	"files.insertFinalNewline": true
+    "files.insertFinalNewline": true,
+    "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }

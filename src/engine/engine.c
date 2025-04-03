@@ -170,8 +170,11 @@ int Engine_Run(int argc, const char** argv)
 
 	IN_Init();
 
-	shader_t testShader;
-	Shader_InitRaster(&testShader, "Sigma", "assets/shaders/test.vert", "assets/shaders/test.frag");
+	shader_t modelShader;
+	Shader_InitRaster(&modelShader, "Sigma", "assets/shaders/meshmodel.vert", "assets/shaders/meshmodel.frag");
+
+	shader_t animatedShader;
+	Shader_InitRaster(&animatedShader, "Sigma2", "assets/shaders/meshanimated.vert", "assets/shaders/meshanimated.frag");
 
 	texture_t testTexture;
 	Texture_Init(&testTexture, "assets/textures/scateleton.png", true, false);
@@ -205,10 +208,8 @@ int Engine_Run(int argc, const char** argv)
 	};
 	uint32_t lid1 = Light_AddPointlight(&lightParams);
 
-	g_View.position = NEW_VEC3(0.0f, 2.0f, 0.0f);
-
 	model_t mapModel;
-	Model_Init(&mapModel, "assets/models/mapthing.obj");
+	Model_Init(&mapModel, "assets/models/mapthing.obj", false);
 	mesh_instancemodel_t mapInstance = {
 		.r = 0.75f,
 		.g = 0.75f,
@@ -220,7 +221,7 @@ int Engine_Run(int argc, const char** argv)
 	Mat4_Scale(&mapInstance.model, NEW_VEC3S(0.5f));
 
 	model_t animModel;
-	Model_Init(&animModel, "assets/models/dancing_vampire.dae");
+	Model_Init(&animModel, "assets/models/dancing_vampire.dae", true);
 	mesh_instancemodel_t animInstance = {
 		.r = 0.5f,
 		.g = 0.5f,
@@ -229,7 +230,13 @@ int Engine_Run(int argc, const char** argv)
 		.model = MAT4_IDENTITY
 	};
 	Mat4_Translate(&animInstance.model, NEW_VEC3(0.0f, -3.25f, -5.0f));
-	Mat4_Scale(&animInstance.model, NEW_VEC3S(0.02f));
+	//Mat4_Scale(&animInstance.model, NEW_VEC3S(0.02f));
+
+	animation_t animAnimation;
+	Animation_InitFromPath(&animAnimation, &animModel, "assets/models/dancing_vampire.dae", 0);
+
+	animator_t animAnimator;
+	Animator_Init(&animAnimator, &animAnimation);
 
 	quat_t coobeStartQuat = QUAT_IDENTITY;
 	Quat_AxisAngle(45.0f, NEW_VEC3S(1.0f), &coobeStartQuat);
@@ -356,8 +363,7 @@ int Engine_Run(int argc, const char** argv)
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		Shader_Bind(&testShader);
-
+		Shader_Bind(&modelShader);
 		Texture_Bind(R_GetWhiteTexture(), 0);
 		mesh_instancemodel_t coobeInstance = {
 			.r = 1.0f,
@@ -381,6 +387,10 @@ int Engine_Run(int argc, const char** argv)
 		Texture_Bind(R_GetWhiteTexture(), 0);
 		Mesh_DrawInstances(R_GetCubeMesh());
 
+		
+		Animator_Update(&animAnimator, frameTime);
+		R_UpdateAnimationBuffer(&animAnimator);
+		Shader_Bind(&animatedShader);
 		Model_Draw(&animModel, &animInstance, 0);
 
 		Framebuffer_UnBind();
@@ -417,11 +427,14 @@ int Engine_Run(int argc, const char** argv)
 	Snd_UnloadSound(sound);
 	Snd_DestroyStream(&stream);
 
-	Shader_Destroy(&testShader);
+	Shader_Destroy(&modelShader);
+	Shader_Destroy(&animatedShader);
 	Texture_Destroy(&testTexture);
 
 	Model_Destroy(&mapModel);
 	Model_Destroy(&animModel);
+	Animation_Destroy(&animAnimation);
+	Animator_Destroy(&animAnimator);
 	Framebuffer_Destroy(&testFramebuffer);
 
 	Net_Close();

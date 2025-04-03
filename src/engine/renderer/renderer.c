@@ -264,8 +264,7 @@ void R_Present()
 
 void R_UpdateAnimationBuffer(animator_t* animator)
 {
-	uint32_t boneCount = (uint32_t)Array_Size(animator->animation->bones);
-	Uniform_Update(&s_AnimationUniform, animator->finalMatrices, sizeof(mat4_t) * boneCount, 0);
+	Uniform_Update(&s_AnimationUniform, animator->finalMatrices, sizeof(mat4_t) * animator->animation->bones.count, 0);
 }
 
 ivec2_t R_GetWindowSize()
