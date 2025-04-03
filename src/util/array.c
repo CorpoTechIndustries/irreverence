@@ -1,8 +1,9 @@
 #include <util/array.h>
 #include <platform/memory.h>
+#include <stdalign.h>
 
 struct array_header_t {
-	size_t stride;
+	alignas(16) size_t stride;
 	size_t size;
 	size_t count;
 };
@@ -69,7 +70,7 @@ void Array_Clear(array_t array)
 {
 	struct array_header_t* header = get_header(array);
 	header->count = 0;
-	
+
 	Sys_MemZero(array, header->size);
 }
 

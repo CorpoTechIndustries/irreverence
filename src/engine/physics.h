@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define MAX_PHYSICS_OBJECTS 65535
+#define MAX_PHYSICS_OBJECTS UINT16_MAX
 #define INVALID_BODYID UINT32_MAX
 
 enum {
