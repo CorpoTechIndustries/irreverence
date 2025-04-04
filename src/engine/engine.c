@@ -230,7 +230,7 @@ int Engine_Run(int argc, const char** argv)
 		.model = MAT4_IDENTITY
 	};
 	Mat4_Translate(&animInstance.model, NEW_VEC3(0.0f, -3.25f, -5.0f));
-	//Mat4_Scale(&animInstance.model, NEW_VEC3S(0.02f));
+	Mat4_Scale(&animInstance.model, NEW_VEC3S(0.02f));
 
 	animation_t animAnimation;
 	Animation_InitFromPath(&animAnimation, &animModel, "assets/models/dancing_vampire.dae", 0);
@@ -377,7 +377,7 @@ int Engine_Run(int argc, const char** argv)
 
 		float coobeAngle = 0.0f;
 		vec3_t coobeAxis = VEC3_ZERO;
-		Quat_GetAxisAngle(&coobe->rotation, &coobeAngle, &coobeAxis);
+		Quat_GetAxisAngle(coobe->rotation, &coobeAngle, &coobeAxis);
 		Mat4_Rotate(&coobeInstance.model, coobeAngle, coobeAxis);
 		Mesh_AddInstance(R_GetCubeMesh(), &coobeInstance, R_GetWhiteMaterial());
 
@@ -387,7 +387,6 @@ int Engine_Run(int argc, const char** argv)
 
 		Model_AddInstance(&mapModel, &mapInstance);
 		Model_DrawInstances(&mapModel);
-
 
 		Animator_Update(&animAnimator, frameTime);
 		R_UpdateAnimationBuffer(&animAnimator);

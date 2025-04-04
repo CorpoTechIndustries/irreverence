@@ -13,12 +13,16 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-static void ConvertMat4(const struct aiMatrix4x4* mat, mat4_t* dest) // Duplicate of the one in model.c, should unify these. Maybe Mat4_Transpose()?
+static void ConvertMat4(const struct aiMatrix4x4* aimat, dualquat_t* dest)
 {
-	dest->m0 = (float)mat->a1; dest->m4 = (float)mat->a2; dest->m8 = (float)mat->a3;  dest->m12 = (float)mat->a4;
-	dest->m1 = (float)mat->b1; dest->m5 = (float)mat->b2; dest->m9 = (float)mat->b3;  dest->m13 = (float)mat->b4;
-	dest->m2 = (float)mat->c1; dest->m6 = (float)mat->c2; dest->m10 = (float)mat->c3; dest->m14 = (float)mat->c4;
-	dest->m3 = (float)mat->d1; dest->m7 = (float)mat->d2; dest->m11 = (float)mat->d3; dest->m15 = (float)mat->d4;
+    mat4_t mat = {
+		aimat->a1, aimat->b1, aimat->c1, aimat->d1,
+		aimat->a2, aimat->b2, aimat->c2, aimat->d2,
+		aimat->a3, aimat->b3, aimat->c3, aimat->d3,
+		aimat->a4, aimat->b4, aimat->c4, aimat->d4
+    };
+
+	Mat4_ToDualQuat(&mat, dest);
 }
 
 static float GetScaleFactor(float time, float next_time, float anim_time)
@@ -81,7 +85,7 @@ static void InterpolateScale(anim_bone_t* animbone, float anim_time, mat4_t* des
 static void InterpolateRotation(anim_bone_t* animbone, float anim_time, mat4_t* dest)
 {
 	if (animbone->rotationCount == 1) {
-		Mat4_QuatToMat4(animbone->rotations[0].val, dest);
+		Quat_ToMat4(animbone->rotations[0].val, dest);
 		return;
 	}
 	
@@ -100,7 +104,7 @@ static void InterpolateRotation(anim_bone_t* animbone, float anim_time, mat4_t* 
 	quat_t finalRotation = QUAT_IDENTITY;
 	Quat_SLerp(animbone->rotations[p0].val, animbone->rotations[p1].val, scaleFactor, &finalRotation);
 
-	Mat4_QuatToMat4(finalRotation, dest);
+	Quat_ToMat4(finalRotation, dest);
 }
 
 void AnimationBone_Init(anim_bone_t* animbone, bone_info_t* info, const void* channel)
@@ -247,7 +251,7 @@ static void ReadAnimationBones(animation_t* animation, const struct aiAnimation*
 				strncpy(newBoneinfo.name, ainode_anim->mNodeName.data, MATH_MIN(ainode_anim->mNodeName.length, MAX_BONEINFO_NAME_LENGTH));
 			}
 
-			newBoneinfo.offset = MAT4_IDENTITY;
+			newBoneinfo.offset = DUALQUAT_IDENTITY;
 
 			Array_Push(model->bones.list, newBoneinfo);
 			
@@ -339,26 +343,26 @@ void Animation_Destroy(animation_t* animation)
 	FreeHierarchData(&animation->rootNode);
 }
 
-static void CalcBoneTransform(animator_t* animator, const anim_node_t* node, mat4_t parent_transform)
+static void CalcBoneTransform(animator_t* animator, const anim_node_t* node, dualquat_t parent_transform)
 {
 	anim_bone_t* animbone = Animation_FindBone(animator->animation, node->name);
 
-	mat4_t nodeTransform;
+	dualquat_t nodeTransform;
 	bone_info_t* boneinfo = NULL;
 
 	if (animbone) {
 		AnimationBone_Update(animbone, animator->time);
-		nodeTransform = animbone->localTrans;
+		Mat4_ToDualQuat(&animbone->localTrans, &nodeTransform);
 		boneinfo = animbone->boneInfo;
 	} else {
 		nodeTransform = node->transform;
 	}
 
-	mat4_t globalTransform;
-	Mat4_Mul(&parent_transform, &nodeTransform, &globalTransform);
+	dualquat_t globalTransform;
+	DualQuat_MulTo(&parent_transform, &nodeTransform, &globalTransform);
 
 	if (boneinfo) {
-		Mat4_Mul(&globalTransform, &boneinfo->offset, &animator->finalMatrices[boneinfo->id]);
+		DualQuat_MulTo(&globalTransform, &boneinfo->offset, &animator->finalMatrices[boneinfo->id]);
 	}
 
 	for (uint32_t i = 0; i < node->childrenCount; i++) {
@@ -369,12 +373,12 @@ static void CalcBoneTransform(animator_t* animator, const anim_node_t* node, mat
 void Animator_Init(animator_t* animator, animation_t* animation)
 {
 	animator->animation = animation;
-	animator->finalMatrices = Sys_Malloc(sizeof(mat4_t) * MAX_MODEL_BONES);
+	animator->finalMatrices = Sys_Malloc(sizeof(dualquat_t) * MAX_MODEL_BONES);
 	animator->time = 0.0f;
 	animator->frametime = 0.0f;
 
 	for (uint32_t i = 0; i < MAX_MODEL_BONES; i++) {
-		animator->finalMatrices[i] = MAT4_IDENTITY;
+		animator->finalMatrices[i] = DUALQUAT_IDENTITY;
 	}
 }
 
@@ -385,7 +389,7 @@ void Animator_Update(animator_t* animator, float frametime)
 	if (animator->animation) {
 		animator->time += animator->animation->tps * frametime;
 		animator->time = fmodf(animator->time, animator->animation->duration);
-		CalcBoneTransform(animator, &animator->animation->rootNode, MAT4_IDENTITY);
+		CalcBoneTransform(animator, &animator->animation->rootNode, DUALQUAT_IDENTITY);
 	}
 }
 

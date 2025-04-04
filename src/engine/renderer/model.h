@@ -3,6 +3,8 @@
 #include <engine/renderer/mesh.h>
 #include <engine/renderer/material.h>
 
+#include <math/quat.h>
+
 #include <util/array.h>
 
 #define MAX_MODEL_SKINS 1
@@ -11,7 +13,7 @@
 #define MAX_BONEINFO_NAME_LENGTH 32
 
 typedef struct bone_info {
-	mat4_t offset;
+	dualquat_t offset;
 	char name[MAX_BONEINFO_NAME_LENGTH];
 	uint8_t id;
 } bone_info_t;

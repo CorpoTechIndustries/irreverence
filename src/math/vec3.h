@@ -15,7 +15,7 @@ extern "C" {
 #define NEW_IVEC3(x, y, z) (ivec3_t){ x, y, z }
 #define NEW_IVEC3S(s) (ivec3_t){ s, s, s }
 
-typedef union {
+typedef union vec3 {
 	vec_t v[3];
 
 	struct {
@@ -27,7 +27,7 @@ typedef union {
 	};
 } vec3_t;
 
-typedef union {
+typedef union ivec3 {
 	ivec_t v[3];
 
 	struct {

@@ -38,12 +38,16 @@ typedef struct
 } mesh_data_t;
 
 
-static void ConvertMat4(const struct aiMatrix4x4* mat, mat4_t* dest)
+static void ConvertMat4(const struct aiMatrix4x4* aimat, dualquat_t* dest)
 {
-	dest->m0 = (float)mat->a1; dest->m4 = (float)mat->a2; dest->m8 = (float)mat->a3;  dest->m12 = (float)mat->a4;
-	dest->m1 = (float)mat->b1; dest->m5 = (float)mat->b2; dest->m9 = (float)mat->b3;  dest->m13 = (float)mat->b4;
-	dest->m2 = (float)mat->c1; dest->m6 = (float)mat->c2; dest->m10 = (float)mat->c3; dest->m14 = (float)mat->c4;
-	dest->m3 = (float)mat->d1; dest->m7 = (float)mat->d2; dest->m11 = (float)mat->d3; dest->m15 = (float)mat->d4;
+    mat4_t mat = {
+		aimat->a1, aimat->b1, aimat->c1, aimat->d1,
+		aimat->a2, aimat->b2, aimat->c2, aimat->d2,
+		aimat->a3, aimat->b3, aimat->c3, aimat->d3,
+		aimat->a4, aimat->b4, aimat->c4, aimat->d4
+    };
+
+	Mat4_ToDualQuat(&mat, dest);
 }
 
 static mesh_data_t ProcessMeshModel(const struct aiMesh* mesh)

@@ -12,7 +12,7 @@ extern "C" {
 #define NEW_VEC2(x, y) (vec2_t){ x, y }
 #define NEW_IVEC2(x, y) (ivec2_t){ x, y }
 
-typedef union {
+typedef union vec2 {
 	vec_t v[2];
 
 	struct {
@@ -24,7 +24,7 @@ typedef union {
 	};
 } vec2_t;
 
-typedef union {
+typedef union ivec2 {
 	ivec_t v[2];
 
 	struct {

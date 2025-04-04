@@ -35,7 +35,7 @@ typedef struct {
 } anim_bone_t;
 
 typedef struct anim_node {
-	mat4_t transform;
+	dualquat_t transform;
 	struct anim_node* childrens;
 	uint32_t childrenCount;
 	char name[MAX_ANIM_NODE_NAME_LENGTH];
@@ -54,7 +54,7 @@ typedef struct {
 
 typedef struct {
 	animation_t* animation;
-	mat4_t* finalMatrices;
+	dualquat_t* finalMatrices;
 	float time;
 	float frametime;
 } animator_t;

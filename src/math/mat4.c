@@ -1,4 +1,5 @@
 #include <math/mat4.h>
+#include <math/quat.h>
 
 //#define CGLM_ALL_UNALIGNED
 #include <cglm/cglm.h>
@@ -35,11 +36,6 @@ void Mat4_RotateQuat(mat4_t* mat, quat_t rotation)
 	glm_quat_rotate((GLM_MAT)mat, rotation.v, (GLM_MAT)mat);
 }
 
-void Mat4_QuatToMat4(quat_t quat, mat4_t* dest)
-{
-	glm_quat_mat4(quat.v, (GLM_MAT)dest);
-}
-
 void Mat4_Ortho(float left, float right, float bottom, float top, float nearZ, float farZ, mat4_t* dest)
 {
 	glm_ortho(left, right, bottom, top, nearZ, farZ, (GLM_MAT)dest);
@@ -53,4 +49,26 @@ void Mat4_Perspective(float fov, float aspect, float nearZ, float farZ, mat4_t* 
 void Mat4_LookAt(vec3_t eye, vec3_t center, vec3_t up, mat4_t* dest)
 {
 	glm_lookat(eye.v, center.v, up.v, (GLM_MAT)dest);
+}
+
+void Mat4_ToQuat(mat4_t* mat, quat_t* dest)
+{
+	glm_mat4_quat((GLM_MAT)mat, dest->v);
+}
+
+void Mat4_ToDualQuat(mat4_t* mat, dualquat_t* dest)
+{
+	quat_t rotation;
+	Mat4_ToQuat(mat, &rotation);
+
+	dest->real = rotation;
+
+	quat_t transQuat = NEW_QUAT(mat->m12, mat->m13, mat->m14, 0.0f);
+
+	Quat_MulTo(transQuat, rotation, &dest->dual);
+	
+	dest->dual.x *= 0.5f;
+	dest->dual.y *= 0.5f;
+	dest->dual.z *= 0.5f;
+	dest->dual.w *= 0.5f;
 }
