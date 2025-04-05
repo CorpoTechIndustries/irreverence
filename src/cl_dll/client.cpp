@@ -16,6 +16,19 @@ extern "C" DLL_EXPORT bool ClientInit(client_functions_t* funcs, client_exports_
 	exports->pInit = []() {};
 	exports->pClose = []() {};
 
+	exports->pRenderPreDepth = []() { return false; };
+	exports->pRenderPostDepth = []() {};
+	exports->pRenderPreShadows = []() { return false; };
+	exports->pRenderPostShadows = []() {};
+	exports->pRenderPreOpaque = []() { return false; };
+	exports->pRenderPostOpaque = []() {};
+	exports->pRenderPreTransparent = []() { return false; };
+	exports->pRenderPostTransparent = []() {};
+	exports->pRenderPreDecals = []() { return false; };
+	exports->pRenderPostDecals = []() {};
+	exports->pRenderPreOverlay = []() { return false; };
+	exports->pRenderPostOverlay = []() {};
+
 	MESSAGE("Hello from client dll!");
 
 	return true;

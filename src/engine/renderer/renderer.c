@@ -14,12 +14,11 @@
 #include <util/array.h>
 #include <util/sort.h>
 
-#include <string.h>
-#include <math.h>
-
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <string.h>
+#include <math.h>
 #include <stdalign.h>
 
 static void glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
@@ -114,7 +113,7 @@ bool R_Init()
 		.nearZ = 0.2f,
 		.farZ = 1000.0f
 	};
-
+	
 	Uniform_Init(&s_GlobalUniform, UNIFORM_LOCATION_GLOBAL, NULL, sizeof(s_GlobalData));
 
 	dualquat_t defAnimQuats[255];
@@ -261,6 +260,13 @@ void R_DebugMoveUpdate()
 	}
 }
 
+static void RenderDepth() { }
+static void RenderShadows() { }
+static void RenderOpaque() { }
+static void RenderTransparent() { }
+static void RenderDecals() { }
+static void RenderOverlay() { }
+
 void R_Present()
 {
 	s_GlobalData.curtime = Engine_CurTime();
@@ -273,6 +279,36 @@ void R_Present()
 	Uniform_Update(&s_GlobalUniform, &s_GlobalData, sizeof(s_GlobalData), 0);
 
 	Light_Update();
+
+	if (!g_ClientExports.pRenderPreDepth()) {
+		RenderDepth();
+	}
+	g_ClientExports.pRenderPostDepth();
+	
+	if (!g_ClientExports.pRenderPreShadows()) {
+		RenderShadows();
+	}
+	g_ClientExports.pRenderPostShadows();
+
+	if (!g_ClientExports.pRenderPreOpaque()) {
+		RenderOpaque();
+	}
+	g_ClientExports.pRenderPostOpaque();
+
+	if (!g_ClientExports.pRenderPreTransparent()) {
+		RenderTransparent();
+	}
+	g_ClientExports.pRenderPostTransparent();
+
+	if (!g_ClientExports.pRenderPreDecals()) {
+		RenderDecals();
+	}
+	g_ClientExports.pRenderPostDecals();
+
+	if (!g_ClientExports.pRenderPreOverlay()) {
+		RenderOverlay();
+	}
+	g_ClientExports.pRenderPostOverlay();
 }
 
 void R_UpdateAnimationBuffer(animator_t* animator)

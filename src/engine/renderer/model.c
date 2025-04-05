@@ -3,6 +3,8 @@
 
 #include <engine/log.h>
 
+#include <public/aabb.h>
+
 #include <platform/path.h>
 #include <platform/memory.h>
 
@@ -36,7 +38,6 @@ typedef struct
 	void* vertices;
 	uint32_t* indices;
 } mesh_data_t;
-
 
 static void ConvertMat4(const struct aiMatrix4x4* aimat, dualquat_t* dest)
 {
@@ -299,6 +300,20 @@ bool Model_Init(model_t* model, const char* path, bool animated)
 	
 	s_bSuccess = true;
 	s_bAnimated = animated;
+
+	aabb_t boundingbox = { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
+
+	for (uint32_t i = 0; i < scene->mNumMeshes; i++) {
+		const struct aiAABB* aiaabb = &scene->mMeshes[i]->mAABB;
+
+		boundingbox.min.x = MATH_MIN(aiaabb->mMin.x, boundingbox.min.x);
+		boundingbox.min.y = MATH_MIN(aiaabb->mMin.y, boundingbox.min.y);
+		boundingbox.min.z = MATH_MIN(aiaabb->mMin.z, boundingbox.min.z);
+		
+		boundingbox.max.x = MATH_MAX(aiaabb->mMax.x, boundingbox.max.x);
+		boundingbox.max.y = MATH_MAX(aiaabb->mMax.y, boundingbox.max.y);
+		boundingbox.max.z = MATH_MAX(aiaabb->mMax.z, boundingbox.max.z);
+	}
 
 	RecursiveProcessNode(scene, scene->mRootNode);
 

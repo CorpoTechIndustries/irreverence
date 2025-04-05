@@ -64,7 +64,9 @@
         "tuple": "c",
         "type_traits": "c",
         "quat.h": "c",
-        "stdalign.h": "c"
+        "stdalign.h": "c",
+        "any": "c",
+        "complex": "c"
     },
     "editor.insertSpaces": false,
     "files.insertFinalNewline": true,

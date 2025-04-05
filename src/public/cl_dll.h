@@ -22,6 +22,19 @@ typedef struct {
 typedef struct {
 	void(*pInit)();
 	void(*pClose)();
+
+	bool(*pRenderPreDepth)();
+	void(*pRenderPostDepth)();
+	bool(*pRenderPreShadows)();
+	void(*pRenderPostShadows)();
+	bool(*pRenderPreOpaque)();
+	void(*pRenderPostOpaque)();
+	bool(*pRenderPreTransparent)();
+	void(*pRenderPostTransparent)();
+	bool(*pRenderPreDecals)();
+	void(*pRenderPostDecals)();
+	bool(*pRenderPreOverlay)();
+	void(*pRenderPostOverlay)();
 } client_exports_t;
 
 typedef bool(*client_init_fn_t)(client_functions_t* funcs, client_exports_t* exports, int version);

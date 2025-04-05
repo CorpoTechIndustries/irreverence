@@ -4,7 +4,8 @@
 extern "C" {
 #endif
 
-#define MATH_MIN(a, b) a > b ? a : b
+#define MATH_MAX(a, b) a > b ? a : b
+#define MATH_MIN(a, b) a < b ? a : b
 
 typedef float vec_t;
 typedef int ivec_t;
