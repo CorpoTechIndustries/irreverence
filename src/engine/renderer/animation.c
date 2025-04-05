@@ -32,7 +32,7 @@ static float GetScaleFactor(float time, float next_time, float anim_time)
 	return midwayLength / framesDiff;
 }
 
-static void InterpolatePosition(anim_bone_t* animbone, float anim_time, mat4_t* dest)
+static void InterpolatePosition(anim_bone_t* animbone, float anim_time, mat4_t* dest, vec3_t offset)
 {
 	if (animbone->translationCount == 1) {
 		Mat4_Translate(dest, animbone->translations[0].val);
@@ -54,35 +54,12 @@ static void InterpolatePosition(anim_bone_t* animbone, float anim_time, mat4_t* 
 	vec3_t finalPosition = VEC3_ZERO;
 	Vec3_Lerp(animbone->translations[p0].val, animbone->translations[p1].val, scaleFactor, &finalPosition);
 
+	Vec3_AddTo(finalPosition, offset, &finalPosition);
+
 	Mat4_Translate(dest, finalPosition);
 }
 
-static void InterpolateScale(anim_bone_t* animbone, float anim_time, mat4_t* dest)
-{
-	if (animbone->scaleCount == 1) {
-		Mat4_Scale(dest, animbone->scales[0].val);
-		return;
-	}
-	
-	uint32_t p0 = 0;
-	for (uint32_t i = 0; i < animbone->scaleCount - 1; i++) {
-		if (anim_time < animbone->scales[i + 1].time) {
-			p0 = i;
-			break;
-		}
-	}
-
-	uint32_t p1 = p0 + 1;
-
-	float scaleFactor = GetScaleFactor(animbone->scales[p0].time, animbone->scales[p1].time, anim_time);
-
-	vec3_t finalScale = VEC3_ZERO;
-	Vec3_Lerp(animbone->scales[p0].val, animbone->scales[p1].val, scaleFactor, &finalScale);
-
-	Mat4_Scale(dest, finalScale);
-}
-
-static void InterpolateRotation(anim_bone_t* animbone, float anim_time, mat4_t* dest)
+static void InterpolateRotation(anim_bone_t* animbone, float anim_time, mat4_t* dest, quat_t offset)
 {
 	if (animbone->rotationCount == 1) {
 		Quat_ToMat4(animbone->rotations[0].val, dest);
@@ -101,31 +78,25 @@ static void InterpolateRotation(anim_bone_t* animbone, float anim_time, mat4_t* 
 
 	float scaleFactor = GetScaleFactor(animbone->rotations[p0].time, animbone->rotations[p1].time, anim_time);
 
-	quat_t finalRotation = QUAT_IDENTITY;
+	quat_t finalRotation;
 	Quat_SLerp(animbone->rotations[p0].val, animbone->rotations[p1].val, scaleFactor, &finalRotation);
+	
+	Quat_MulTo(finalRotation, offset, &finalRotation);
 
 	Quat_ToMat4(finalRotation, dest);
 }
 
-void AnimationBone_Init(anim_bone_t* animbone, bone_info_t* info, const void* channel)
+static void AnimationBone_Init(anim_bone_t* animbone, bone_info_t* info, const void* channel)
 {
 	const struct aiNodeAnim* aichannel = channel;
 
 	animbone->boneInfo = info;
-	animbone->localTrans = MAT4_IDENTITY;
 
 	animbone->translationCount = aichannel->mNumPositionKeys;
 	if (aichannel->mNumPositionKeys > 0) {
 		animbone->translations = Sys_Malloc(sizeof(keyframe_vec3_t) * aichannel->mNumPositionKeys);
 	} else {
 		animbone->translations = NULL;
-	}
-
-	animbone->scaleCount = aichannel->mNumScalingKeys;
-	if (aichannel->mNumScalingKeys > 0) {
-		animbone->scales = Sys_Malloc(sizeof(keyframe_vec3_t) * aichannel->mNumScalingKeys);
-	} else {
-		animbone->scales = NULL;
 	}
 
 	animbone->rotationCount = aichannel->mNumRotationKeys;
@@ -143,14 +114,6 @@ void AnimationBone_Init(anim_bone_t* animbone, bone_info_t* info, const void* ch
 		keyframe->time = (float)aikey->mTime;
 	}	
 
-	for (uint32_t i = 0; i < aichannel->mNumScalingKeys; i++) {
-		keyframe_vec3_t* keyframe = &animbone->scales[i];
-		const struct aiVectorKey* aikey = &aichannel->mScalingKeys[i];
-
-		keyframe->val = *((vec3_t*)&aikey->mValue);
-		keyframe->time = (float)aikey->mTime;
-	}	
-
 	for (uint32_t i = 0; i < aichannel->mNumRotationKeys; i++) {
 		keyframe_quat_t* keyframe = &animbone->rotations[i];
 		const struct aiQuatKey* aikey = &aichannel->mRotationKeys[i];
@@ -160,27 +123,10 @@ void AnimationBone_Init(anim_bone_t* animbone, bone_info_t* info, const void* ch
 	}	
 }
 
-void AnimationBone_Update(anim_bone_t* animbone, float anim_time)
-{
-	mat4_t translation = MAT4_IDENTITY;
-	mat4_t rotation = MAT4_IDENTITY;
-	mat4_t scale = MAT4_IDENTITY;
-	InterpolatePosition(animbone, anim_time, &translation);
-	InterpolateRotation(animbone, anim_time, &rotation);
-	InterpolateScale(animbone, anim_time, &scale);
-
-	Mat4_Mul(&translation, &rotation, &animbone->localTrans);
-	Mat4_Mul(&animbone->localTrans, &scale, &animbone->localTrans);
-}
-
-void AnimationBone_Destroy(anim_bone_t* animbone)
+static void AnimationBone_Destroy(anim_bone_t* animbone)
 {
 	if (animbone->translations) {
 		Sys_Free(animbone->translations);
-	}
-
-	if (animbone->scales) {
-		Sys_Free(animbone->scales);
 	}
 
 	if (animbone->rotations) {
@@ -317,12 +263,12 @@ bool Animation_InitFromPath(animation_t* animation, model_t* model, const char* 
 	return true;
 }
 
-anim_bone_t* Animation_FindBone(animation_t* animation, const char* name)
+static anim_bone_inst_t* Animator_FindBoneInstance(animator_t* animator, const char* name)
 {
-	for (uint8_t i = 0; i < animation->bones.count; i++) {
-		anim_bone_t* bone = &animation->bones.list[i];
-		if (strncmp(bone->boneInfo->name, name, MAX_BONEINFO_NAME_LENGTH) == 0) {
-			return bone;
+	for (uint8_t i = 0; i < animator->animation->bones.count; i++) {
+		anim_bone_inst_t* boneInst = &animator->boneInstances[i];
+		if (strncmp(boneInst->bone->boneInfo->name, name, MAX_BONEINFO_NAME_LENGTH) == 0) {
+			return boneInst;
 		}
 	}
 
@@ -345,24 +291,32 @@ void Animation_Destroy(animation_t* animation)
 
 static void CalcBoneTransform(animator_t* animator, const anim_node_t* node, dualquat_t parent_transform)
 {
-	anim_bone_t* animbone = Animation_FindBone(animator->animation, node->name);
+	anim_bone_inst_t* boneInst = Animator_FindBoneInstance(animator, node->name);
 
 	dualquat_t nodeTransform;
 	bone_info_t* boneinfo = NULL;
 
-	if (animbone) {
-		AnimationBone_Update(animbone, animator->time);
-		Mat4_ToDualQuat(&animbone->localTrans, &nodeTransform);
-		boneinfo = animbone->boneInfo;
+	if (boneInst) {
+		boneinfo = boneInst->bone->boneInfo;
+
+		mat4_t translation = MAT4_IDENTITY;
+		mat4_t rotation = MAT4_IDENTITY;
+		mat4_t scale = MAT4_IDENTITY;
+		InterpolatePosition(boneInst->bone, animator->time, &translation, animator->boneOffsetPositions[boneinfo->id]);
+
+		InterpolateRotation(boneInst->bone, animator->time, &rotation, animator->boneOffsetRotations[boneinfo->id]);	
+		Mat4_Mul(&translation, &rotation, &boneInst->localTrans);
+
+		Mat4_ToDualQuat(&boneInst->localTrans, &nodeTransform);
 	} else {
 		nodeTransform = node->transform;
 	}
-
+	
 	dualquat_t globalTransform;
 	DualQuat_MulTo(&parent_transform, &nodeTransform, &globalTransform);
 
 	if (boneinfo) {
-		DualQuat_MulTo(&globalTransform, &boneinfo->offset, &animator->finalMatrices[boneinfo->id]);
+		DualQuat_MulTo(&globalTransform, &boneinfo->offset, &animator->boneQuats[boneinfo->id]);
 	}
 
 	for (uint32_t i = 0; i < node->childrenCount; i++) {
@@ -373,19 +327,32 @@ static void CalcBoneTransform(animator_t* animator, const anim_node_t* node, dua
 void Animator_Init(animator_t* animator, animation_t* animation)
 {
 	animator->animation = animation;
-	animator->finalMatrices = Sys_Malloc(sizeof(dualquat_t) * MAX_MODEL_BONES);
 	animator->time = 0.0f;
-	animator->frametime = 0.0f;
-
-	for (uint32_t i = 0; i < MAX_MODEL_BONES; i++) {
-		animator->finalMatrices[i] = DUALQUAT_IDENTITY;
+	animator->boneInstances = NULL;
+	animator->boneCount = animation->bones.count;
+	
+	animator->boneQuats = Sys_Malloc(sizeof(dualquat_t) * animator->boneCount);
+	for (uint32_t i = 0; i < animator->boneCount; i++) {
+		animator->boneQuats[i] = DUALQUAT_IDENTITY;
 	}
+
+	animator->boneOffsetPositions = Sys_Calloc(sizeof(vec3_t) * animator->boneCount);
+
+	animator->boneOffsetRotations = Sys_Malloc(sizeof(quat_t) * animator->boneCount);
+	for (uint32_t i = 0; i < animator->boneCount; i++) {
+		animator->boneOffsetRotations[i] = QUAT_IDENTITY;
+	}
+
+	animator->boneInstances = Sys_Malloc(sizeof(anim_bone_inst_t) * animator->boneCount);
+	for (uint32_t i = 0; i < animator->boneCount; i++) {
+		anim_bone_inst_t* boneInst = &animator->boneInstances[i];
+		boneInst->bone = &animation->bones.list[i];
+		boneInst->localTrans = MAT4_IDENTITY;
+	}	
 }
 
 void Animator_Update(animator_t* animator, float frametime)
 {
-	animator->frametime = frametime;
-
 	if (animator->animation) {
 		animator->time += animator->animation->tps * frametime;
 		animator->time = fmodf(animator->time, animator->animation->duration);
@@ -393,10 +360,55 @@ void Animator_Update(animator_t* animator, float frametime)
 	}
 }
 
+void Animator_Play(animator_t* animator, animation_t* animation)
+{
+	animator->animation = animation;
+	animator->time = 0.0f;
+
+	for (uint32_t i = 0; i < animation->bones.count; i++) {
+		anim_bone_inst_t* boneInst = &animator->boneInstances[i];
+		boneInst->bone = &animation->bones.list[i];
+		boneInst->localTrans = MAT4_IDENTITY;
+	}
+
+	for (uint32_t i = 0; i < MAX_MODEL_BONES; i++) {
+		animator->boneQuats[i] = DUALQUAT_IDENTITY;
+	}
+}
+
+void Animator_Stop(animator_t* animator)
+{
+	if (!animator->animation) {
+		return;
+	}
+
+	animator->animation = NULL;
+	animator->time = 0.0f;
+
+	for (uint32_t i = 0; i < MAX_MODEL_BONES; i++) {
+		animator->boneQuats[i] = DUALQUAT_IDENTITY;
+	}
+}
+
 void Animator_Destroy(animator_t* animator)
 {
-	if (animator->finalMatrices) {
-		Sys_Free(animator->finalMatrices);
-		animator->finalMatrices = NULL;
+	if (animator->boneQuats) {
+		Sys_Free(animator->boneQuats);
+		animator->boneQuats = NULL;
+	}
+
+	if (animator->boneOffsetPositions) {
+		Sys_Free(animator->boneOffsetPositions);
+		animator->boneOffsetPositions = NULL;
+	}
+
+	if (animator->boneOffsetRotations) {
+		Sys_Free(animator->boneOffsetRotations);
+		animator->boneOffsetRotations = NULL;
+	}
+
+	if (animator->boneInstances) {
+		Sys_Free(animator->boneInstances);
+		animator->boneInstances = NULL;
 	}
 }

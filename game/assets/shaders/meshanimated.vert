@@ -40,7 +40,7 @@ out VP_Shared {
 mat4 CalcAnimationMat4()
 {
 	ivec4 boneIds = ivec4(
-		int(aBoneIds & 0xFF), 
+		int(aBoneIds) & 0xFF, 
 		int((aBoneIds >> 8)) & 0xFF, 
 		int((aBoneIds >> 16)) & 0xFF,
 		int((aBoneIds >> 24)) & 0xFF);

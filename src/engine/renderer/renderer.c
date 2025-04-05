@@ -117,7 +117,13 @@ bool R_Init()
 
 	Uniform_Init(&s_GlobalUniform, UNIFORM_LOCATION_GLOBAL, NULL, sizeof(s_GlobalData));
 
-	Uniform_Init(&s_AnimationUniform, UNIFORM_LOCATION_ANIMATIONS, NULL, sizeof(dualquat_t) * 255);
+	dualquat_t defAnimQuats[255];
+
+	for (uint32_t i = 0; i < 255; i++) {
+		defAnimQuats[i] = DUALQUAT_IDENTITY;
+	}	
+
+	Uniform_Init(&s_AnimationUniform, UNIFORM_LOCATION_ANIMATIONS, defAnimQuats, sizeof(dualquat_t) * 255);
 
 	Light_Init();
 
@@ -271,7 +277,7 @@ void R_Present()
 
 void R_UpdateAnimationBuffer(animator_t* animator)
 {
-	Uniform_Update(&s_AnimationUniform, animator->finalMatrices, sizeof(dualquat_t) * animator->animation->bones.count, 0);
+	Uniform_Update(&s_AnimationUniform, animator->boneQuats, sizeof(dualquat_t) * animator->boneCount, 0);
 }
 
 ivec2_t R_GetWindowSize()

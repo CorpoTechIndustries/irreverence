@@ -24,15 +24,17 @@ typedef struct {
 } keyframe_quat_t;
 
 typedef struct {
-	mat4_t localTrans;
 	bone_info_t* boneInfo;
 	keyframe_vec3_t* translations;
-	keyframe_vec3_t* scales;
 	keyframe_quat_t* rotations;
 	uint32_t translationCount;
-	uint32_t scaleCount;
 	uint32_t rotationCount;
 } anim_bone_t;
+
+typedef struct {
+	mat4_t localTrans;
+	anim_bone_t* bone;
+} anim_bone_inst_t;
 
 typedef struct anim_node {
 	dualquat_t transform;
@@ -54,20 +56,20 @@ typedef struct {
 
 typedef struct {
 	animation_t* animation;
-	dualquat_t* finalMatrices;
+	dualquat_t* boneQuats;
+	vec3_t* boneOffsetPositions;
+	quat_t* boneOffsetRotations;
+	anim_bone_inst_t* boneInstances;
 	float time;
-	float frametime;
+	uint8_t boneCount;	
 } animator_t;
-
-void AnimationBone_Init(anim_bone_t* animbone, bone_info_t* info, const void* channel);
-void AnimationBone_Update(anim_bone_t* animbone, float anim_time);
-void AnimationBone_Destroy(anim_bone_t* animbone);
 
 bool Animation_Init(animation_t* animation, model_t* model, const void* scene, uint32_t index);
 bool Animation_InitFromPath(animation_t* animation, model_t* model, const char* path, uint32_t index);
-anim_bone_t* Animation_FindBone(animation_t* animation, const char* name);
 void Animation_Destroy(animation_t* animation);
 
 void Animator_Init(animator_t* animator, animation_t* animation);
 void Animator_Update(animator_t* animator, float frametime);
+void Animator_Play(animator_t* animator, animation_t* animation);
+void Animator_Stop(animator_t* animator);
 void Animator_Destroy(animator_t* animator);
