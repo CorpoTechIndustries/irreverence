@@ -33,7 +33,7 @@ bool Framebuffer_Init(
 		framebuffer_attachment_t attachment = attachments[i];
 		texture_t* colorTexture = &framebuffer->colorTextures[i];
 		
-		Texture_InitColorAttachment(colorTexture, framebuffer, i, width, height, samples, attachment.format, attachment.type);
+		Texture_InitColorAttachment(colorTexture, framebuffer, i, width, height, samples, attachment.format, attachment.type, attachment.maxMips);
 	}
 
 	if (depth_attachment) {
@@ -107,14 +107,29 @@ void Framebuffer_Destroy(framebuffer_t* framebuffer)
 	}
 }
 
-void Framebuffer_CopyTo(framebuffer_t* framebuffer, framebuffer_t* to, bool include_depth)
+void Framebuffer_CopyTo(framebuffer_t* framebuffer, framebuffer_t* to, uint8_t attachmentId)
 {	
+	// TODO: Eventually make this more flexible although this doesn't have many uses.
+
+	glNamedFramebufferReadBuffer(framebuffer->id, GL_COLOR_ATTACHMENT0 + attachmentId);
+	
 	if (!to) {
 		ivec2_t windowSize = R_GetWindowSize();
-		glBlitNamedFramebuffer(framebuffer->id, 0, 0, 0, framebuffer->width, framebuffer->height, 0, 0, windowSize.x, windowSize.y, include_depth ? GL_DEPTH_BUFFER_BIT : GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBlitNamedFramebuffer(framebuffer->id, 0, 0, 0, framebuffer->width, framebuffer->height, 0, 0, windowSize.x, windowSize.y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	} else {
-		glBlitNamedFramebuffer(framebuffer->id, to->id, 0, 0, framebuffer->width, framebuffer->height, 0, 0, to->width, to->height, include_depth ? GL_DEPTH_BUFFER_BIT : GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glNamedFramebufferDrawBuffer(to->id, GL_COLOR_ATTACHMENT0 + attachmentId);
+		glBlitNamedFramebuffer(framebuffer->id, to->id, 0, 0, framebuffer->width, framebuffer->height, 0, 0, to->width, to->height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	}
+}
+
+void Framebuffer_ClearColor(framebuffer_t* framebuffer, uint8_t attachment, const vec4_t color)
+{
+	glClearNamedFramebufferfv(framebuffer->id, GL_COLOR, attachment, color.v);
+}
+
+void Framebuffer_RelinkAttachment(framebuffer_t* framebuffer, uint8_t location, uint8_t to_mip)
+{
+	glNamedFramebufferTexture(framebuffer->id, GL_COLOR_ATTACHMENT0 + location, framebuffer->colorTextures[location].id, to_mip);
 }
 
 static uint32_t s_iBoundFramebuffer = 0;

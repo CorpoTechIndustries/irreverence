@@ -14,6 +14,7 @@ typedef struct texture {
 	uint32_t width;
 	uint32_t height;
 	uint8_t channelCount;
+	uint8_t mipCount;
 } texture_t;
 
 bool Texture_Init(texture_t* texture, const char* image_path, bool linearize, bool gen_mipmaps);
@@ -26,7 +27,8 @@ bool Texture_InitColorAttachment(
 	uint32_t height, 
 	uint8_t samples, 
 	gapi_enum_t format, 
-	gapi_enum_t type);
+	gapi_enum_t type,
+	uint8_t maxMips);
 bool Texture_InitDepthAttachment(
 	texture_t* texture, 
 	framebuffer_t* framebuffer, 
@@ -37,4 +39,5 @@ bool Texture_InitDepthAttachment(
 	gapi_enum_t type);
 void Texture_Destroy(texture_t* texture);
 
-void Texture_Bind(texture_t* texture, uint8_t location);
+void Texture_BindRaster(texture_t* texture, uint8_t location);
+void Texture_BindCompute(texture_t* texture, uint8_t location, uint8_t mip, gapi_enum_t access, gapi_enum_t format);

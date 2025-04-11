@@ -8,6 +8,13 @@
 #include <stdint.h>
 #include <stddef.h>
 
+typedef uint32_t gapi_enum_t;
+
+typedef struct {
+	gapi_enum_t type;
+	uint8_t	count;
+} mesh_attribute_t;
+
 typedef struct {
 	float x, y, z; 			// Position
 	float nx, ny, nz;		// Normal
@@ -33,12 +40,6 @@ typedef struct {
 } mesh_instancemodel_t;
 
 typedef struct {
-	uint32_t count;
-	uint32_t capacity;
-	uint8_t* array;
-} mesh_instlist_t;
-
-typedef struct {
 	uint32_t id;
 	uint32_t vbo;
 	uint32_t ibo;
@@ -50,6 +51,16 @@ typedef struct {
 	struct material_instlist_node* instListHead;
 } mesh_t;
 
+bool Mesh_InitCustom(
+	mesh_t* mesh, 
+	const void* vertices, 
+	size_t vertices_size,
+	const uint32_t* indices,
+	uint32_t index_count,
+	const mesh_attribute_t* vert_attribs,
+	uint8_t vert_attrib_count,
+	const mesh_attribute_t* inst_attribs,
+	uint8_t inst_attrib_count);
 bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t vertex_count, const uint32_t* indices, uint32_t index_count);
 bool Mesh_InitAnimated(mesh_t* mesh, const mesh_vertexanimated_t* vertices, uint32_t vertex_count, const uint32_t* indices, uint32_t index_count);
 bool Mesh_InitSkybox(mesh_t* mesh, const mesh_vertexsky_t* vertices, uint32_t vertex_count);

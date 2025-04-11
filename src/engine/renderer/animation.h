@@ -38,7 +38,7 @@ typedef struct {
 
 typedef struct anim_node {
 	dualquat_t transform;
-	struct anim_node* childrens;
+	struct anim_node* childrens; // TODO: Use linear array for all nodes and input pointer to offset
 	uint32_t childrenCount;
 	char name[MAX_ANIM_NODE_NAME_LENGTH];
 } anim_node_t;

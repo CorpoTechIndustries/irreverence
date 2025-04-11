@@ -4,6 +4,7 @@
 #include <engine/renderer/material.h>
 
 #include <math/quat.h>
+#include <math/aabb.h>
 
 #include <util/array.h>
 
@@ -21,11 +22,13 @@ typedef struct bone_info {
 typedef struct model {
 	mesh_t* meshes;
 	material_t* meshMaterials;
-
+	
 	struct {
 		bone_info_t* list;
 		uint8_t count;
 	} bones;
+
+	aabb_t aabb;
 } model_t;
 
 bool Model_Init(model_t* model, const char* path, bool animated);

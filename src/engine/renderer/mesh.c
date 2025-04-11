@@ -10,9 +10,15 @@
 
 #define SetMatrixLayout(vertexarray, location, offset) for (unsigned int i = 0; i < 4; i++) { unsigned int mat_offset = location + i; glEnableVertexArrayAttrib(vertexarray, mat_offset); glVertexArrayAttribFormat(vertexarray, mat_offset, 4, GL_FLOAT, GL_FALSE, offset + sizeof(float) * 4 * i); glVertexArrayAttribBinding(vertexarray, mat_offset, 1); }
 
+struct mesh_instlist {
+	uint32_t count;
+	uint32_t capacity;
+	uint8_t* array;
+};
+
 struct material_instlist_node {
 	uint32_t key; // Material Id
-	mesh_instlist_t list;
+	struct mesh_instlist list;
 	struct material_instlist_node* next;
 };
 
@@ -41,7 +47,7 @@ static struct material_instlist_node* MakeMaterialInstList(mesh_t* mesh, uint32_
 	if (!node) {
 		node = Sys_Malloc(sizeof(struct material_instlist_node));
 		node->key = key;
-		node->list = (mesh_instlist_t) { 0 };
+		node->list = (struct mesh_instlist) { 0 };
 		node->next = NULL;
 
 		mesh->instListHead = node;
@@ -55,10 +61,174 @@ static struct material_instlist_node* MakeMaterialInstList(mesh_t* mesh, uint32_
 
 	node->next = Sys_Malloc(sizeof(struct material_instlist_node));
 	node->next->key = key;
-	node->next->list = (mesh_instlist_t) { 0 };
+	node->next->list = (struct mesh_instlist) { 0 };
 	node->next->next = NULL;
 
 	return node->next;
+}
+
+bool Mesh_InitCustom(
+	mesh_t* mesh, 
+	const void* vertices, 
+	size_t vertices_size, 
+	const uint32_t* indices,
+	uint32_t index_count,
+	const mesh_attribute_t* vert_attribs,
+	uint8_t vert_attrib_count,
+	const mesh_attribute_t* inst_attribs,
+	uint8_t inst_attrib_count)
+{
+	mesh->vertexCount = 0;
+	mesh->indexCount = 0;
+
+	mesh->instStride = 0;
+	mesh->instListHead = NULL;
+
+	mesh->id = 0;
+	mesh->vbo = 0;
+	mesh->ebo = 0; 
+	mesh->ibo = 0;
+
+	if (vert_attrib_count == 0) {
+		// TODO: Assert
+	}	
+	glCreateVertexArrays(1, &mesh->id);
+	
+	if (indices && index_count > 0) {
+		mesh->indexCount = index_count;
+		size_t indexSize = index_count * sizeof(uint32_t);
+
+		glCreateBuffers(1, &mesh->ebo);
+		glNamedBufferStorage(mesh->ebo, indexSize, indices, GL_DYNAMIC_STORAGE_BIT);
+	
+		glVertexArrayElementBuffer(mesh->id, mesh->ebo);
+	}
+	
+	if (vert_attribs && vert_attrib_count > 0) {
+		glCreateBuffers(1, &mesh->vbo);
+		glNamedBufferStorage(mesh->vbo, vertices_size, vertices, GL_DYNAMIC_STORAGE_BIT);
+
+		size_t vertAttTotalSize = 0;
+		size_t* vertAttSizes = Sys_Malloc(sizeof(size_t) * vert_attrib_count); 
+		for (size_t i = 0; i < vert_attrib_count; i++) {
+			const mesh_attribute_t* attrib = &vert_attribs[i];
+			
+			if (attrib->count == 0) {
+				Sys_Free(vertAttSizes);
+				// TODO: Assert
+			}
+	
+			size_t attribSize = 0;
+			switch (attrib->type)
+			{
+			case GL_FLOAT:
+			case GL_INT:
+			case GL_UNSIGNED_INT:
+				attribSize = 4 * attrib->count;
+				break;
+	
+			case GL_SHORT:
+			case GL_UNSIGNED_SHORT:
+				attribSize = 2 * attrib->count;
+				break;
+	
+			case GL_BYTE:
+			case GL_UNSIGNED_BYTE:
+				attribSize = attrib->count;
+				break;
+	
+			default:
+				break;
+			}
+	
+			vertAttTotalSize += attribSize;
+	
+			vertAttSizes[i] = attribSize;
+		}
+		
+		mesh->vertexCount = vertices_size / vertAttTotalSize;
+	
+		// Link Vertex Buffer and Set Vertex Buffer Layout
+		glVertexArrayVertexBuffer(mesh->id, 0, mesh->vbo, 0, vertAttTotalSize);
+	
+		size_t vertAttribOffset = 0;
+		for (uint8_t i = 0; i < vert_attrib_count; i++) {
+			const mesh_attribute_t* attrib = &vert_attribs[i];
+	
+			glEnableVertexArrayAttrib(mesh->id, i);
+			glVertexArrayAttribFormat(mesh->id, i, attrib->count, attrib->type, GL_FALSE, (GLuint)vertAttribOffset);
+			glVertexArrayAttribBinding(mesh->id, i, 0);
+	
+			vertAttribOffset += vertAttSizes[i];
+		}
+		
+		Sys_Free(vertAttSizes);
+	}
+
+	if (inst_attribs && inst_attrib_count > 0) {
+		glDisable(GL_DEBUG_OUTPUT);
+		glCreateBuffers(1, &mesh->ibo);
+		glNamedBufferStorage(mesh->ibo, 0, NULL, GL_DYNAMIC_STORAGE_BIT);
+		glEnable(GL_DEBUG_OUTPUT);
+
+		size_t instAttTotalSize = 0;
+		size_t* instAttSizes = Sys_Malloc(sizeof(size_t) * inst_attrib_count); 
+		for (size_t i = 0; i < inst_attrib_count; i++) {
+			const mesh_attribute_t* attrib = &inst_attribs[i];
+			
+			if (attrib->count == 0) {
+				Sys_Free(instAttSizes);
+				// TODO: Assert
+			}
+	
+			size_t attribSize = 0;
+			switch (attrib->type)
+			{
+			case GL_FLOAT:
+			case GL_INT:
+			case GL_UNSIGNED_INT:
+				attribSize = 4 * attrib->count;
+				break;
+	
+			case GL_SHORT:
+			case GL_UNSIGNED_SHORT:
+				attribSize = 2 * attrib->count;
+				break;
+	
+			case GL_BYTE:
+			case GL_UNSIGNED_BYTE:
+				attribSize = attrib->count;
+				break;
+	
+			default:
+				break;
+			}
+	
+			instAttTotalSize += attribSize;
+	
+			instAttSizes[i] = attribSize;
+		}
+
+		mesh->instStride = instAttTotalSize;
+
+		glVertexArrayVertexBuffer(mesh->id, 1, mesh->ibo, 0, (GLsizei)instAttTotalSize);
+		glVertexArrayBindingDivisor(mesh->id, 1, 1);
+
+		size_t instAttribOffset = 0;
+		for (uint8_t i = 0; i < inst_attrib_count; i++) {
+			const mesh_attribute_t* attrib = &inst_attribs[i];
+	
+			uint8_t loc = i + vert_attrib_count;
+			glEnableVertexArrayAttrib(mesh->id, loc);
+			glVertexArrayAttribFormat(mesh->id, loc, attrib->count, attrib->type, GL_FALSE, (GLuint)instAttribOffset);
+			glVertexArrayAttribBinding(mesh->id, loc, 1);
+	
+			instAttribOffset += instAttSizes[i];
+		}
+
+
+		Sys_Free(instAttSizes);
+	}
 }
 
 bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t vertex_count, const uint32_t* indices, uint32_t index_count)
@@ -246,7 +416,7 @@ void Mesh_AddInstance(mesh_t* mesh, const void* data, material_t* material)
 		instlist_node = MakeMaterialInstList(mesh, material->id);
 	}
 
-	mesh_instlist_t* instlist = &instlist_node->list;
+	struct mesh_instlist* instlist = &instlist_node->list;
 
 	if (!instlist->array) {
 		instlist->array = Sys_Calloc(mesh->instStride);
@@ -278,31 +448,27 @@ void Mesh_Draw(mesh_t* mesh, const void* data)
 {
 	glNamedBufferData(mesh->ibo, mesh->instStride, data, GL_DYNAMIC_DRAW);
 
-	if (mesh->ebo) {
+	if (mesh->ebo > 0) {
 		glBindVertexArray(mesh->id);
 		glDrawElements(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
 	} else {
 		glBindVertexArray(mesh->id);
 		glDrawArrays(GL_TRIANGLES, 0, mesh->vertexCount);
-		glBindVertexArray(0);
 	}
 }
 
 void Mesh_DrawInstances(mesh_t* mesh, material_t* material)
 {
 	struct material_instlist_node* instlist_node = FindMaterialInstList(mesh, material->id);
-	mesh_instlist_t* instlist = &instlist_node->list;
+	struct mesh_instlist* instlist = &instlist_node->list;
 
 	glNamedBufferData(mesh->ibo, mesh->instStride * instlist->count, instlist->array, GL_DYNAMIC_DRAW);
 
-	if (mesh->ebo) {
+	if (mesh->ebo > 0) {
 		glBindVertexArray(mesh->id);
 		glDrawElementsInstanced(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, NULL, instlist->count);
-		glBindVertexArray(0);
 	} else {
 		glBindVertexArray(mesh->id);
 		glDrawArraysInstanced(GL_TRIANGLES, 0, mesh->vertexCount, instlist->count);
-		glBindVertexArray(0);
 	}
 }

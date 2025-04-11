@@ -3,6 +3,8 @@
 #include <engine/renderer/renderer.h>
 #include <engine/renderer/texture.h>
 
+#include <math/vec4.h>
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -11,6 +13,7 @@
 typedef struct {
 	gapi_enum_t format;
 	gapi_enum_t type;
+	uint8_t maxMips; // Only for Color attachments
 } framebuffer_attachment_t;
 
 typedef struct framebuffer {
@@ -32,6 +35,8 @@ bool Framebuffer_Init(
 	framebuffer_attachment_t* depth_attachment);
 void Framebuffer_Destroy(framebuffer_t* framebuffer);
 
-void Framebuffer_CopyTo(framebuffer_t* framebuffer, framebuffer_t* to, bool include_depth);
+void Framebuffer_CopyTo(framebuffer_t* framebuffer, framebuffer_t* to, uint8_t attachmentId);
+void Framebuffer_ClearColor(framebuffer_t* framebuffer, uint8_t attachment, const vec4_t color);
+void Framebuffer_RelinkAttachment(framebuffer_t* framebuffer, uint8_t location, uint8_t to_mip); 
 void Framebuffer_Bind(framebuffer_t* framebuffer);
 void Framebuffer_UnBind();

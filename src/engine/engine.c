@@ -132,7 +132,7 @@ int Engine_Run(int argc, const char** argv)
 	io->IniFilename = NULL;
 	io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-	bool show_demo = true;
+	bool show_demo = false;
 
 	if (!R_Init()) {
 		return EXIT_FAILURE;
@@ -170,80 +170,6 @@ int Engine_Run(int argc, const char** argv)
 
 	IN_Init();
 
-	shader_t modelShader;
-	Shader_InitRaster(&modelShader, "Sigma", "assets/shaders/meshmodel.vert", "assets/shaders/meshmodel.frag");
-
-	shader_t animatedShader;
-	Shader_InitRaster(&animatedShader, "Sigma2", "assets/shaders/meshanimated.vert", "assets/shaders/meshanimated.frag");
-
-	texture_t testTexture;
-	Texture_Init(&testTexture, "assets/textures/scateleton.png", true, false);
-
-	framebuffer_attachment_t testAttachments[] = {
-		{ .format = GL_RGB8, .type = GL_UNSIGNED_BYTE }
-	};
-	framebuffer_t testFramebuffer;
-	Framebuffer_Init(&testFramebuffer, 1280, 720, 0, testAttachments, 1, NULL);
-
-	sound_file_t soundFile;
-
-	if (!Snd_LoadSoundFromFile(&soundFile, "assets/sounds/test.wav")) {
-		LOG_ERROR("WHAT THE FUCK?");
-	}
-
-	sound_t sound =	Snd_LoadSound(&soundFile);
-
-	Snd_FreeFile(&soundFile);
-
-	sound_stream_t stream;
-
-	Snd_CreateStream(&stream);
-
-	Snd_SetStreamSound(&stream, sound);
-
-	pointlight_data_t lightParams = {
-		.position = NEW_VEC3(0.0f, 4.0f, -1.0f),
-		.color = NEW_VEC3S(1.0f),
-		.brightness = 0.5f
-	};
-	uint32_t lid1 = Light_AddPointlight(&lightParams);
-
-	model_t mapModel;
-	Model_Init(&mapModel, "assets/models/mapthing.obj", false);
-	mesh_instancemodel_t mapInstance = {
-		.r = 0.75f,
-		.g = 0.75f,
-		.b = 0.75f,
-		.a = 1.0f,
-		.model = MAT4_IDENTITY
-	};
-	Mat4_Translate(&mapInstance.model, NEW_VEC3(7.25f, 0.0f, 0.0f));
-	Mat4_Scale(&mapInstance.model, NEW_VEC3S(0.5f));
-
-	model_t animModel;
-	Model_Init(&animModel, "assets/models/dancing_vampire.dae", true);
-	mesh_instancemodel_t animInstance = {
-		.r = 0.5f,
-		.g = 0.5f,
-		.b = 0.5f,
-		.a = 1.0f,
-		.model = MAT4_IDENTITY
-	};
-	Mat4_Translate(&animInstance.model, NEW_VEC3(0.0f, -3.25f, -5.0f));
-	Mat4_Scale(&animInstance.model, NEW_VEC3S(0.02f));
-
-	animation_t animAnimation;
-	Animation_InitFromPath(&animAnimation, &animModel, "assets/models/dancing_vampire.dae", 0);
-
-	animator_t animAnimator;
-	Animator_Init(&animAnimator, &animAnimation);
-
-	quat_t coobeStartQuat = QUAT_IDENTITY;
-	Quat_AxisAngle(45.0f, NEW_VEC3S(1.0f), &coobeStartQuat);
-	physobj_t* coobe = Phys_AddCube(NEW_VEC3(-2.0f, 20.0f, -3.0f), coobeStartQuat, NEW_VEC3S(0.5f), PHYS_TYPE_DYNAMIC, PHYS_LAYER_MOVING);
-
-	physobj_t* floor = Phys_AddCube(NEW_VEC3(0.0f, -7.0f, 0.0f), QUAT_IDENTITY, NEW_VEC3(100.0f, 1.0f, 100.0f), PHYS_TYPE_STATIC, PHYS_LAYER_NONMOVING);
-
 	float hi = 0.5f;
 	float nextTick = 0.0f;
 	float tickRate = 1.0f/60.0f;
@@ -269,38 +195,9 @@ int Engine_Run(int argc, const char** argv)
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		igNewFrame();
-
+		
 		if (show_demo) {
 			igShowDemoWindow(&show_demo);
-		}
-
-		{
-			int n = 0;
-
-			net_address_t from;
-			int server_read = Net_ReadPacket(NET_SERVER, &n, sizeof(n), &from);
-
-			if (server_read > -1) {
-				uint16_t port;
-				const char* address = Net_AddressToString(from, &port);
-				LOG_INFO("Got %d from client %s:%u", n, address, port);
-
-				Net_SendPacket(NET_SERVER, &n, sizeof(n), from);
-			}
-		}
-
-		{
-			int n = 0;
-
-			net_address_t from;
-			int client_read = Net_ReadPacket(NET_CLIENT, &n, sizeof(n), &from);
-
-			uint16_t port;
-			const char* address = Net_AddressToString(from, &port);
-
-			if (client_read > -1) {
-				LOG_INFO("Got %d from the server(%s:%u)", n, address, port);
-			}
 		}
 
 		if (IN_IsKeyPressed(GLFW_KEY_5)) {
@@ -332,73 +229,6 @@ int Engine_Run(int argc, const char** argv)
 
 		R_Present();
 
-		if (IN_IsKeyPressed(GLFW_KEY_P)) {
-			Snd_PlayStream(&stream);
-
-			if (lid1 != UINT32_MAX) {
-				Light_RemovePointlight(lid1);
-				lid1 = UINT32_MAX;
-			}
-
-			pointlight_data_t christParams = {
-				.position = NEW_VEC3(-3.0f, 2.0f, -1.0f),
-				.color = NEW_VEC3(1.0f, 0.0f, 0.0f),
-				.brightness = 0.25f,
-				.radius = 100.0f
-			};
-
-			Light_AddPointlight(&christParams);
-
-			christParams.position = NEW_VEC3(3.0f, 2.0f, -1.0f);
-			christParams.color = NEW_VEC3(0.0f, 1.0f, 0.0f);
-			Light_AddPointlight(&christParams);
-		}
-
-		if (IN_IsKeyPressed(GLFW_KEY_R)) {
-			hi += 0.05f;
-			Light_SetSLightBrightness(lid1, hi);
-		}
-
-		Framebuffer_Bind(&testFramebuffer);
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		Shader_Bind(&modelShader);
-		Texture_Bind(R_GetWhiteTexture(), 0);
-		mesh_instancemodel_t coobeInstance = {
-			.r = 1.0f,
-			.g = 0.5f,
-			.b = 0.5f,
-			.a = 1.0f
-		};
-		coobeInstance.model = MAT4_IDENTITY;
-		Mat4_Scale(&coobeInstance.model, NEW_VEC3S(0.5f));
-		Mat4_Translate(&coobeInstance.model, coobe->position);
-
-		float coobeAngle = 0.0f;
-		vec3_t coobeAxis = VEC3_ZERO;
-		Quat_GetAxisAngle(coobe->rotation, &coobeAngle, &coobeAxis);
-		Mat4_Rotate(&coobeInstance.model, coobeAngle, coobeAxis);
-		Mesh_AddInstance(R_GetCubeMesh(), &coobeInstance, R_GetWhiteMaterial());
-
-		Material_Bind(R_GetWhiteMaterial());
-		
-		Mesh_DrawInstances(R_GetCubeMesh(), R_GetWhiteMaterial());
-
-		Model_AddInstance(&mapModel, &mapInstance);
-		Model_DrawInstances(&mapModel);
-
-		Animator_Update(&animAnimator, frameTime);
-		R_UpdateAnimationBuffer(&animAnimator);
-		Shader_Bind(&animatedShader);
-		Model_Draw(&animModel, &animInstance, 0);
-
-		Framebuffer_UnBind();
-		Framebuffer_CopyTo(&testFramebuffer, NULL, false);
-
-		Mesh_ClearInstances(R_GetCubeMesh(), R_GetWhiteMaterial());
-		Model_ClearInstances(&mapModel);
-
 		igRender();
 
 		ImGui_ImplOpenGL3_RenderDrawData(igGetDrawData());
@@ -423,19 +253,6 @@ int Engine_Run(int argc, const char** argv)
 	}
 
 	#endif
-
-	Snd_UnloadSound(sound);
-	Snd_DestroyStream(&stream);
-
-	Shader_Destroy(&modelShader);
-	Shader_Destroy(&animatedShader);
-	Texture_Destroy(&testTexture);
-
-	Model_Destroy(&mapModel);
-	Model_Destroy(&animModel);
-	Animation_Destroy(&animAnimation);
-	Animator_Destroy(&animAnimator);
-	Framebuffer_Destroy(&testFramebuffer);
 
 	Net_Close();
 

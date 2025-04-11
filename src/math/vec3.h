@@ -40,16 +40,22 @@ typedef union ivec3 {
 } ivec3_t;
 
 vec3_t Vec3_Add(vec3_t v1, vec3_t v2);
+vec3_t Vec3_Adds(vec3_t v1, vec_t scale);
 vec3_t Vec3_Sub(vec3_t v1, vec3_t v2);
+vec3_t Vec3_Subs(vec3_t v1, vec_t scale);
 vec3_t Vec3_Mul(vec3_t v1, vec3_t v2);
-vec3_t Vec3_Muls(vec3_t v, vec_t scale);
+vec3_t Vec3_Muls(vec3_t v1, vec_t scale);
 vec3_t Vec3_Div(vec3_t v1, vec3_t v2);
+vec3_t Vec3_Divs(vec3_t v1, vec_t scale);
 
 void Vec3_AddTo(vec3_t v1, vec3_t v2, vec3_t* dest);
+void Vec3_AddsTo(vec3_t v1, vec_t scale, vec3_t* dest);
 void Vec3_SubTo(vec3_t v1, vec3_t v2, vec3_t* dest);
+void Vec3_SubsTo(vec3_t v1, vec_t scale, vec3_t* dest);
 void Vec3_MulTo(vec3_t v1, vec3_t v2, vec3_t* dest);
 void Vec3_MulsTo(vec3_t v1, vec_t scale, vec3_t* dest);
 void Vec3_DivTo(vec3_t v1, vec3_t v2, vec3_t* dest);
+void Vec3_DivsTo(vec3_t v1, vec_t scale, vec3_t* dest);
 
 void Vec3_Normalize(vec3_t vec, vec3_t* dest);
 void Vec3_Cross(vec3_t v1, vec3_t v2, vec3_t* dest);

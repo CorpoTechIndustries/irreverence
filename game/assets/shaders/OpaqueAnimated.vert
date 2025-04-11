@@ -9,7 +9,7 @@ layout(location = 4) in vec4 aWeights;
 layout(location = 5) in vec4 aInstanceColor;
 layout(location = 6) in mat4 aInstanceModel;
 
-layout(std140, binding = 0) uniform GlobalUniform
+layout(std140, binding = 0) uniform CommonUniform
 {
 	uint Width;
 	uint Height;
@@ -17,7 +17,9 @@ layout(std140, binding = 0) uniform GlobalUniform
 	float FrameTime;
 	mat4 View;
 	mat4 Projection;
-} uGlobal;
+	float Near;
+	float Far;
+} uCommon;
 
 struct dualquat
 {
@@ -107,7 +109,7 @@ void main()
 	mat4 WorldMatrix = aInstanceModel * BoneTransform;
 	pFragPos = vec3(WorldMatrix * vec4(aPos, 1.0));
 
-	gl_Position = uGlobal.Projection * uGlobal.View * vec4(pFragPos, 1.0);
+	gl_Position = uCommon.Projection * uCommon.View * vec4(pFragPos, 1.0);
 
 	pNormal = transpose(mat3(inverse(WorldMatrix))) * aNormal;
 	pUV = aUV;

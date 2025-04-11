@@ -1,11 +1,12 @@
 #include <engine/renderer/shader.h>
 #include <engine/log.h>
 
+#include <platform/path.h>
+#include <platform/memory.h>
+
 #include <GL/glew.h>
 
 #include <string.h>
-#include <stdlib.h>
-#include <platform/path.h>
 
 static bool ReadShaderFile(const char* path, char** out_buffer, size_t* out_size)
 {
@@ -37,14 +38,14 @@ bool Shader_InitRaster(shader_t* shader, const char* name, const char* vertex_pa
 	size_t pixelCodeSize = 0;
 	if (!ReadShaderFile(pixel_path, &pixelCode, &pixelCodeSize)) {
 		LOG_ERROR("Failed to load Pixel code from path \"%s\"", pixel_path);
-		free(vertexCode);
+		Sys_Free(vertexCode);
 		return false;
 	}
 	
 	bool res = Shader_InitRasterFromMemory(shader, vertexCode, pixelCode);
 
-	free(vertexCode);
-	free(pixelCode);
+	Sys_Free(vertexCode);
+	Sys_Free(pixelCode);
 
 	return res;
 }
@@ -128,7 +129,9 @@ bool Shader_InitCompute(shader_t* shader, const char* name, const char* path)
 		return false;
 	}
 
-	free(computeCode);
+	bool res = Shader_InitComputeFromMemory(shader, computeCode);
+
+	Sys_Free(computeCode);
 	
 	return true;
 }
@@ -193,12 +196,62 @@ void Shader_Bind(shader_t* shader)
 	glUseProgram(shader->id);
 }
 
-void Shader_Dispatch(shader_t* shader, vec3_t groups, uint32_t memory_barrier)
+void Shader_Dispatch(shader_t* shader, vec3_t groups, gapi_enum_t memory_barrier)
 {
-	Shader_Bind(shader);
 	glDispatchCompute(groups.x, groups.y, groups.z);
 	
 	if (memory_barrier != 0) {
 		glMemoryBarrier(memory_barrier);
 	}
+}
+
+uint8_t Shader_GetLocation(shader_t* shader, const char* name)
+{
+	// TODO: use Map to find the value
+
+	return glGetUniformLocation(shader->id, name);
+}
+
+void Shader_SetInt(shader_t* shader, uint8_t location, int32_t v)
+{
+ 	glProgramUniform1i(shader->id, location, v);
+}
+
+void Shader_SetUInt(shader_t* shader, uint8_t location, uint32_t v)
+{
+	glProgramUniform1ui(shader->id, location, v);
+}
+
+void Shader_SetFloat(shader_t* shader, uint8_t location, float v)
+{
+	glProgramUniform1f(shader->id, location, v);
+}
+
+void Shader_SetVec2(shader_t* shader, uint8_t location, vec2_t v)
+{
+	glProgramUniform2f(shader->id, location, v.x, v.y);
+}
+
+void Shader_SetVec3(shader_t* shader, uint8_t location, vec3_t v)
+{
+	glProgramUniform3f(shader->id, location, v.x, v.y, v.z);
+}
+void Shader_SetVec4(shader_t* shader, uint8_t location, vec4_t v)
+{
+	glProgramUniform4f(shader->id, location, v.x, v.y, v.z, v.w);
+}
+
+void Shader_SetIVec2(shader_t* shader, uint8_t location, ivec2_t v)
+{
+	glProgramUniform2i(shader->id, location, v.x, v.y);
+}
+
+void Shader_SetIVec3(shader_t* shader, uint8_t location, ivec3_t v)
+{
+	glProgramUniform3i(shader->id, location, v.x, v.y, v.z);
+}
+
+void Shader_SetIVec4(shader_t* shader, uint8_t location, ivec4_t v)
+{
+	glProgramUniform4i(shader->id, location, v.x, v.y, v.z, v.w);
 }

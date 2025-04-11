@@ -7,9 +7,10 @@ const float LIGHT_CONSTANT = 1.0;
 const float LIGHT_LINEAR = 0.09;
 const float LIGHT_QUADRATIC = 0.032;
 
-out vec4 FRAG_COLOR;
+layout(location = 1) out vec4 fAccumColor;
+layout(location = 2) out float fReveal;
 
-layout(std140, binding = 0) uniform GlobalUniform
+layout(std140, binding = 0) uniform CommonUniform
 {
 	uint Width;
 	uint Height;
@@ -17,7 +18,9 @@ layout(std140, binding = 0) uniform GlobalUniform
 	float FrameTime;
 	mat4 View;
 	mat4 Projection;
-} uGlobal;
+	float Near;
+	float Far;
+} uCommon;
 
 struct Pointlight
 {
@@ -108,6 +111,7 @@ layout(binding = 0) uniform sampler2D uTexture;
 
 in VP_Shared {
 	vec3 pFragPos;
+	float pDepth;
     vec3 pNormal;
     vec2 pUV;
 	vec4 pInstanceColor;
@@ -115,8 +119,20 @@ in VP_Shared {
 
 void main()
 {
+	vec4 result = pInstanceColor * texture(uTexture, pUV);
+
+	if (result.a < 0.01) {
+		discard;
+	}
+
+	// TODO: Combine with Opaque Shader and just do a simple if check
+
 	vec3 lighting = CalcPointlights(pFragPos, pNormal);
 	lighting += CalcSpotlights(pFragPos, pNormal);
 
-	FRAG_COLOR = pInstanceColor * texture(uTexture, pUV) * vec4(lighting, 1.0);
+    float weight = clamp(pow(min(1.0, result.a * 10.0) + 0.01, 3.0) * 1e8 * 
+                         pow(1.0 - gl_FragCoord.z * 0.9, 3.0), 1e-2, 3e3);
+
+	fAccumColor = vec4(result.rgb * result.a, result.a) * weight;
+	fReveal = result.a;
 }

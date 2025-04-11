@@ -3,8 +3,6 @@
 
 #include <engine/log.h>
 
-#include <public/aabb.h>
-
 #include <platform/path.h>
 #include <platform/memory.h>
 
@@ -84,8 +82,7 @@ static mesh_data_t ProcessMeshModel(const struct aiMesh* mesh)
 			const struct aiVector3D* aiUV = &mesh->mTextureCoords[0][i];
 			vertex.tx = aiUV->x;
 			vertex.tx = aiUV->y;
-		}
-		else {
+		} else {
 			vertex.tx = 0.0f;
 			vertex.tx = 0.0f;
 		}
@@ -220,7 +217,7 @@ static void RecursiveProcessNode(const struct aiScene* scene, const struct aiNod
 		} else {
 			meshdata = ProcessMeshModel(scene->mMeshes[node->mMeshes[i]]);
 		}
-
+		
 		if (meshdata.success) {
 			uint32_t vertexCount = (uint32_t)Array_Size(meshdata.vertices);
 			uint32_t indexCount = (uint32_t)Array_Size(meshdata.indices);
@@ -265,6 +262,7 @@ bool Model_Init(model_t* model, const char* path, bool animated)
 	model->meshMaterials = NULL;
 	model->bones.count = 0;
 	model->bones.list = NULL;
+	model->aabb = (aabb_t) { NEW_VEC3S(-999999), NEW_VEC3S(999999) };
 	
 	if (!path) return false;
 	
@@ -301,18 +299,17 @@ bool Model_Init(model_t* model, const char* path, bool animated)
 	s_bSuccess = true;
 	s_bAnimated = animated;
 
-	aabb_t boundingbox = { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
-
+	aabb_t* aabb = &model->aabb;
 	for (uint32_t i = 0; i < scene->mNumMeshes; i++) {
 		const struct aiAABB* aiaabb = &scene->mMeshes[i]->mAABB;
 
-		boundingbox.min.x = MATH_MIN(aiaabb->mMin.x, boundingbox.min.x);
-		boundingbox.min.y = MATH_MIN(aiaabb->mMin.y, boundingbox.min.y);
-		boundingbox.min.z = MATH_MIN(aiaabb->mMin.z, boundingbox.min.z);
+		aabb->min.x = MATH_MIN(aiaabb->mMin.x, aabb->min.x);
+		aabb->min.y = MATH_MIN(aiaabb->mMin.y, aabb->min.y);
+		aabb->min.z = MATH_MIN(aiaabb->mMin.z, aabb->min.z);
 		
-		boundingbox.max.x = MATH_MAX(aiaabb->mMax.x, boundingbox.max.x);
-		boundingbox.max.y = MATH_MAX(aiaabb->mMax.y, boundingbox.max.y);
-		boundingbox.max.z = MATH_MAX(aiaabb->mMax.z, boundingbox.max.z);
+		aabb->max.x = MATH_MAX(aiaabb->mMax.x, aabb->max.x);
+		aabb->max.y = MATH_MAX(aiaabb->mMax.y, aabb->max.y);
+		aabb->max.z = MATH_MAX(aiaabb->mMax.z, aabb->max.z);
 	}
 
 	RecursiveProcessNode(scene, scene->mRootNode);

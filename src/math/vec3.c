@@ -13,10 +13,26 @@ vec3_t Vec3_Add(vec3_t v1, vec3_t v2)
 	return v3;
 }
 
+vec3_t Vec3_Adds(vec3_t v1, vec_t scale)
+{
+	vec3_t v3;
+	glm_vec3_adds(v1.v, scale, (&v3)->v);
+
+	return v3;
+}
+
 vec3_t Vec3_Sub(vec3_t v1, vec3_t v2)
 {
 	vec3_t v3;
 	glm_vec3_sub(v1.v, v2.v, (&v3)->v);
+
+	return v3;
+}
+
+vec3_t Vec3_Subs(vec3_t v1, vec_t scale)
+{
+	vec3_t v3;
+	glm_vec3_subs(v1.v, scale, (&v3)->v);
 
 	return v3;
 }
@@ -29,12 +45,12 @@ vec3_t Vec3_Mul(vec3_t v1, vec3_t v2)
 	return v3;
 }
 
-vec3_t Vec3_Muls(vec3_t v, vec_t scale)
+vec3_t Vec3_Muls(vec3_t v1, vec_t scale)
 {
-	vec3_t dest;
-	glm_vec3_mul(v.v, NEW_VEC3S(scale).v, dest.v);
+	vec3_t v3;
+	glm_vec3_mul(v1.v, NEW_VEC3S(scale).v, v3.v);
 
-	return dest;
+	return v3;
 }
 
 vec3_t Vec3_Div(vec3_t v1, vec3_t v2)
@@ -45,14 +61,32 @@ vec3_t Vec3_Div(vec3_t v1, vec3_t v2)
 	return v3;
 }
 
+vec3_t Vec3_Divs(vec3_t v1, vec_t scale)
+{
+	vec3_t v3;
+	glm_vec3_divs(v1.v, scale, (&v3)->v);
+
+	return v3;
+}
+
 void Vec3_AddTo(vec3_t v1, vec3_t v2, vec3_t* dest)
 {
 	glm_vec3_add(v1.v, v2.v, dest->v);
 }
 
+void Vec3_AddsTo(vec3_t v1, vec_t scale, vec3_t* dest)
+{
+	glm_vec3_adds(v1.v, scale, dest->v);
+}
+
 void Vec3_SubTo(vec3_t v1, vec3_t v2, vec3_t* dest)
 {
 	glm_vec3_sub(v1.v, v2.v, dest->v);
+}
+
+void Vec3_SubsTo(vec3_t v1, vec_t scale, vec3_t* dest)
+{
+	glm_vec3_subs(v1.v, scale, dest->v);
 }
 
 void Vec3_MulTo(vec3_t v1, vec3_t v2, vec3_t* dest)
@@ -68,6 +102,11 @@ void Vec3_MulsTo(vec3_t v, vec_t scale, vec3_t* dest)
 void Vec3_DivTo(vec3_t v1, vec3_t v2, vec3_t* dest)
 {
 	glm_vec3_div(v1.v, v2.v, dest->v);
+}
+
+void Vec3_DivsTo(vec3_t v1, vec_t scale, vec3_t* dest)
+{
+	glm_vec3_divs(v1.v, scale, dest->v);
 }
 
 void Vec3_Normalize(vec3_t vec, vec3_t* dest)

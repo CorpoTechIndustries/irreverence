@@ -34,6 +34,7 @@ bool Texture_InitFromMemory(texture_t* texture, const uint8_t* data, uint32_t wi
 	texture->width = width;
 	texture->height = height;
 	texture->channelCount = channel_count;
+	texture->mipCount = 0;
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &texture->id);
 
@@ -57,11 +58,11 @@ bool Texture_InitFromMemory(texture_t* texture, const uint8_t* data, uint32_t wi
 		float maxAllowAniso = 0.0f; glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAllowAniso);
 		glTextureParameterf(texture->id, GL_TEXTURE_MAX_ANISOTROPY, fmax(fmin(16.0f, maxAllowAniso), 0.0f));
 
-		glTextureStorage2D(texture->id, (GLsizei)(1 + floorf(log2f((width, height)))), glFormat, width, height);
+		texture->mipCount = (uint32_t)(1 + floorf(log2f(MATH_MAX(width, height))));
+		glTextureStorage2D(texture->id, texture->mipCount, glFormat, width, height);
 		glTextureSubImage2D(texture->id, 0, 0, 0, width, height, glFormatAlt, GL_UNSIGNED_BYTE, data);
 
 		glGenerateTextureMipmap(texture->id);
-
 	} else {
 		GLenum minFilEnum = linearize ? GL_LINEAR : GL_NEAREST;
 		glTextureParameteri(texture->id, GL_TEXTURE_MIN_FILTER, minFilEnum);
@@ -85,26 +86,33 @@ bool Texture_InitColorAttachment(
 	uint32_t height,
 	uint8_t samples,
 	gapi_enum_t format,
-	gapi_enum_t type)
+	gapi_enum_t type,
+	uint8_t max_mips)
 {
 	texture->width = width;
 	texture->height = height;
 	texture->channelCount = 0;
+	texture->mipCount = 0;
 
-	if (samples == 0) {
+	if (samples == 0 || max_mips > 1) {
 		glCreateTextures(GL_TEXTURE_2D, 1, &texture->id);
+		glTextureParameteri(texture->id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(texture->id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(texture->id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(texture->id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		
+		texture->mipCount = (max_mips > 1) ? (uint8_t)(1 + floorf(log2f(MATH_MAX(width, height)))) : 1;
+		texture->mipCount = MATH_MIN(texture->mipCount, max_mips);
 
-		glTextureParameteri(texture->id, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTextureParameteri(texture->id, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTextureParameteri(texture->id, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(texture->id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTextureStorage2D(texture->id, 1, format, width, height);
+		glTextureStorage2D(texture->id, texture->mipCount, format, width, height);
+		
+		glNamedFramebufferTexture(framebuffer->id, GL_COLOR_ATTACHMENT0 + location, texture->id, 0);
 	} else {
 		glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &texture->id);
 		glTextureStorage2DMultisample(texture->id, samples, type, width, height, GL_TRUE);
-	}
 
-	glNamedFramebufferTexture(framebuffer->id, GL_COLOR_ATTACHMENT0 + location, texture->id, 0);
+		glNamedFramebufferTexture(framebuffer->id, GL_COLOR_ATTACHMENT0 + location, texture->id, 0);
+	}
 
 	return true;
 }
@@ -121,14 +129,15 @@ bool Texture_InitDepthAttachment(
 	texture->width = width;
 	texture->height = height;
 	texture->channelCount = 0;
+	texture->mipCount = 0;
 
 	if (samples == 0) {
 		glCreateTextures(GL_TEXTURE_2D, 1, &texture->id);
 
-		glTextureParameteri(texture->id, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTextureParameteri(texture->id, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTextureParameteri(texture->id, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(texture->id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureParameteri(texture->id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(texture->id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(texture->id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(texture->id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTextureStorage2D(texture->id, 1, format, width, height);
 	} else {
 		glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &texture->id);
@@ -146,11 +155,16 @@ void Texture_Destroy(texture_t* texture)
 	texture->id = 0;
 }
 
-static uint32_t s_iBoundTextures[MAX_TEXTURE_BINDS] = { 0 };
-void Texture_Bind(texture_t* texture, uint8_t location)
+static uint32_t s_iBoundTexArrays[MAX_TEXTURE_BINDS] = { 0 };
+void Texture_BindRaster(texture_t* texture, uint8_t location)
 {
-	if (s_iBoundTextures[location] == texture->id) return;
-	s_iBoundTextures[location] = texture->id;
+	if (s_iBoundTexArrays[location] == texture->id) return;
+	s_iBoundTexArrays[location] = texture->id;
 
 	glBindTextureUnit(location, texture->id);
+}
+
+void Texture_BindCompute(texture_t* texture, uint8_t location, uint8_t mip, gapi_enum_t access, gapi_enum_t format)
+{
+	glBindImageTexture(location, texture->id, mip, GL_FALSE, 0, access, format);
 }
