@@ -1,6 +1,7 @@
 #pragma once
 
 #include <public/edict.h>
+#include <string>
 #include "util.h"
 #include "efuncs.h"
 
@@ -22,10 +23,14 @@ public:
 	}
 
 	void Remove();
+	const std::string GetClass() const;
 
 	entvars_t* m_pVars;
 
 	static CBaseEntity* Create(const char* name);
+
+private:
+	std::string m_ClassName;
 };
 
 template <typename T>

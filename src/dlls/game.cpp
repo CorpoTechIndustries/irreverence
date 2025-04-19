@@ -2,6 +2,8 @@
 #include "efuncs.h"
 #include "cbase.h"
 
+#include <cstring>
+
 class CTest : public CBaseEntity
 {
 public:
@@ -13,6 +15,11 @@ public:
 	~CTest() override
 	{
 		MESSAGE("Boop");
+	}
+
+	void Think() override
+	{
+		m_pVars->origin.x += 0.001f;
 	}
 };
 
@@ -36,11 +43,17 @@ bool GameDLLInit(engine_functions_t* functions, game_exports_t* exports, int int
 	exports->pFree = DispatchEntityFree;
 	exports->pThink = DispatchEntityThink;
 
+	exports->pGetEntityClass = [](edict_t* edict, char* buff, size_t size) {
+		CBaseEntity* ent = (CBaseEntity*)edict->data;
+
+		std::string str = ent->GetClass();
+
+		std::strncpy(buff, str.c_str(), size);
+	};
+
 	MESSAGE("Hello gamers!");
 
 	CBaseEntity* entity = CBaseEntity::Create("npc_test");
-
-	entity->Remove();
 
 	return true;
 }

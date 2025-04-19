@@ -23,6 +23,7 @@ target_include_directories(engine PRIVATE
 	${JOLTC_INCLUDE_DIRECTORIES}
 	${STB_INCLUDE_DIRECTORIES}
 	${IMGUI_INCLUDE_DIRECTORIES}
+	${ENET_INCLUDE_DIRECTORIES}
 )
 target_link_libraries(engine PRIVATE
 	${GLEW_STATIC_LIBRARIES}
@@ -31,6 +32,7 @@ target_link_libraries(engine PRIVATE
 	${AL_STATIC_LIBRARIES}
 	joltc
 	cimgui
+	enet::enet_static
 	math
 	platform
 	util

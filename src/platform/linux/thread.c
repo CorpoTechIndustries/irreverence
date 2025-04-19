@@ -10,6 +10,13 @@ struct thread_wrapper_t {
 	thread_fn_t fn;
 };
 
+static thread_t s_MainThread = 0;
+
+void Sys_ThreadInit()
+{
+	s_MainThread = Sys_ThreadCurrent();
+}
+
 static void* call_wrapper(void* data)
 {
 	struct thread_wrapper_t* thr = (struct thread_wrapper_t*)data;
@@ -72,4 +79,14 @@ int Sys_ThreadTryJoin(thread_t thread, size_t ms)
 	t.tv_nsec = (ms % 1000) * 1000000;
 
 	return pthread_timedjoin_np(thread, NULL, &t) == 0;
+}
+
+thread_t Sys_ThreadCurrent()
+{
+	return (thread_t)pthread_self();
+}
+
+int Sys_ThreadIsMain()
+{
+	return s_MainThread = Sys_ThreadCurrent();
 }

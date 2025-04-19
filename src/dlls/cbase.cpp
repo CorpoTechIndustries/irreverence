@@ -41,6 +41,11 @@ void CBaseEntity::Remove()
 	FREE_ENTITY(Edict()->id);
 }
 
+const std::string CBaseEntity::GetClass() const
+{
+	return m_ClassName;
+}
+
 CBaseEntity* CBaseEntity::Create(const char* name)
 {
 	edict_t* ent = CREATE_ENTITY_FROM_NAME(name);
@@ -51,6 +56,8 @@ CBaseEntity* CBaseEntity::Create(const char* name)
 	}
 
 	DispatchEntitySpawn(ent);
+
+	((CBaseEntity*)ent->data)->m_ClassName = name;
 
 	return (CBaseEntity*)ent->data;
 }

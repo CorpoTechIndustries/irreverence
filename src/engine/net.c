@@ -7,6 +7,8 @@
 #include <platform/memory.h>
 #include <math/common.h>
 
+#include <enet.h>
+
 void NetBuffer_Create(net_buffer_t* buffer, size_t max_size)
 {
 	Buffer_Create(buffer, max_size);
@@ -41,6 +43,21 @@ uint32_t NetBuffer_ReadUInt32(net_buffer_t* buffer)
 	return Endian_BigToHost32(value);
 }
 
+int8_t NetBuffer_ReadInt8(net_buffer_t* buffer)
+{
+	return (int8_t)NetBuffer_ReadUInt8(buffer);
+}
+
+int16_t NetBuffer_ReadInt16(net_buffer_t* buffer)
+{
+	return (int16_t)NetBuffer_ReadUInt16(buffer);
+}
+
+int32_t NetBuffer_ReadInt32(net_buffer_t* buffer)
+{
+	return (int32_t)NetBuffer_ReadUInt32(buffer);
+}
+
 float NetBuffer_ReadFloat(net_buffer_t* buffer)
 {
 	uint32_t value = NetBuffer_ReadUInt32(buffer);
@@ -63,9 +80,34 @@ void NetBuffer_WriteUInt32(net_buffer_t* buffer, uint32_t value)
 	Buffer_WriteUInt32(buffer, Endian_HostToBig32(value));
 }
 
+void NetBuffer_WriteInt8(net_buffer_t* buffer, int8_t value)
+{
+	Buffer_WriteUInt8(buffer, (uint8_t)value);
+}
+
+void NetBuffer_WriteInt16(net_buffer_t* buffer, int16_t value)
+{
+	NetBuffer_WriteUInt16(buffer, (uint16_t)value);
+}
+
+void NetBuffer_WriteInt32(net_buffer_t* buffer, int32_t value)
+{
+	NetBuffer_WriteUInt32(buffer, (uint32_t)value);
+}
+
 void NetBuffer_WriteFloat(net_buffer_t* buffer, float value)
 {
 	NetBuffer_WriteUInt32(buffer, *(uint32_t*)&value);
+}
+
+void NetBuffer_Start(net_buffer_t* buffer)
+{
+	buffer->pos = 0;
+}
+
+void NetBuffer_Send(net_buffer_t* buffer, net_source_t source, net_address_t address)
+{
+	Net_SendPacket(source, buffer->data, buffer->pos, address);
 }
 
 static udp_socket_t s_Sockets[NET_COUNT] = { -1, -1 };
@@ -94,6 +136,10 @@ bool Net_Init()
 		s_Sockets[i] = -1;
 	}
 
+	if (enet_initialize() != 0) {
+		return false;
+	}
+
 	CVar_Register(&sv_port);
 
 	return true;
@@ -108,6 +154,8 @@ void Net_Close()
 
 		Sys_UDPDestroy(s_Sockets[i]);
 	}
+
+	enet_deinitialize();
 }
 
 // TODO: Replace any ports in here with the port cvar when cvars are a thing.
@@ -257,4 +305,9 @@ net_address_t Net_Address(const char* address, uint16_t port)
 const char* Net_AddressToString(net_address_t address, uint16_t* port)
 {
 	return Sys_UDPAddressToString(address.address, port);
+}
+
+bool Net_CompareAddress(net_address_t a, net_address_t b)
+{
+	return a.address.address == b.address.address;
 }

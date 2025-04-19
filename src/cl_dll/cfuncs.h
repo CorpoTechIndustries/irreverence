@@ -11,3 +11,5 @@ extern client_functions_t g_ClientFuncs;
 
 #define REGISTER_CVAR(cvar) (g_ClientFuncs.pRegisterCVar)(cvar)
 #define GET_CVAR(name) (g_ClientFuncs.pGetCVar)(name)
+
+#define DRAW_DEBUG_CUBE(origin, size, color) (g_ClientFuncs.pDebugDrawCube)(origin, size, color)

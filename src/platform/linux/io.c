@@ -1,4 +1,5 @@
 #include <platform/io.h>
+#include <platform/mutex.h>
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -14,9 +15,30 @@
 #define STDIN 1
 #define STDERR 2
 
+static mutex_t write_mutex;
+static mutex_t format_mutex;
+
+void Sys_IOInit()
+{
+	write_mutex = Sys_MutexCreate();
+	format_mutex = Sys_MutexCreate();
+}
+
+void Sys_IOClose()
+{
+	Sys_MutexDestroy(write_mutex);
+	Sys_MutexDestroy(format_mutex);
+}
+
 void Sys_Print(const char* str)
 {
+	if (!Sys_MutexLock(write_mutex)) {
+		return;
+	}
+
 	Sys_FilePrint(STDOUT, str);
+
+	Sys_MutexUnlock(write_mutex);
 }
 
 #define FORMAT_BUFFER_SIZE 30000
@@ -25,6 +47,10 @@ static char format_buffer[FORMAT_BUFFER_SIZE];
 
 void Sys_Printf(const char* fmt, ...)
 {
+	if (!Sys_MutexLock(format_mutex)) {
+		return;
+	}
+
 	va_list l;
 
 	va_start(l, fmt);
@@ -33,6 +59,8 @@ void Sys_Printf(const char* fmt, ...)
 	Sys_Print(format_buffer);
 
 	va_end(l);
+
+	Sys_MutexUnlock(format_mutex);
 }
 
 void Sys_VPrintf(const char* fmt, va_list args)

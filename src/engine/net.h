@@ -15,11 +15,21 @@ void NetBuffer_Free(net_buffer_t* buffer);
 uint8_t NetBuffer_ReadUInt8(net_buffer_t* buffer);
 uint16_t NetBuffer_ReadUInt16(net_buffer_t* buffer);
 uint32_t NetBuffer_ReadUInt32(net_buffer_t* buffer);
+
+int8_t NetBuffer_ReadInt8(net_buffer_t* buffer);
+int16_t NetBuffer_ReadInt16(net_buffer_t* buffer);
+int32_t NetBuffer_ReadInt32(net_buffer_t* buffer);
+
 float NetBuffer_ReadFloat(net_buffer_t* buffer);
 
 void NetBuffer_WriteUInt8(net_buffer_t* buffer, uint8_t value);
 void NetBuffer_WriteUInt16(net_buffer_t* buffer, uint16_t value);
 void NetBuffer_WriteUInt32(net_buffer_t* buffer, uint32_t value);
+
+void NetBuffer_WriteInt8(net_buffer_t* buffer, int8_t value);
+void NetBuffer_WriteInt16(net_buffer_t* buffer, int16_t value);
+void NetBuffer_WriteInt32(net_buffer_t* buffer, int32_t value);
+
 void NetBuffer_WriteFloat(net_buffer_t* buffer, float value);
 
 // typedef udp_address_t net_address_t;
@@ -41,6 +51,9 @@ typedef struct {
 	net_type_t type;
 } net_address_t;
 
+void NetBuffer_Start(net_buffer_t* buffer);
+void NetBuffer_Send(net_buffer_t* buffer, net_source_t source, net_address_t address);
+
 #define MAX_NET_PACKET_SIZE 1 << 16
 
 bool Net_Init();
@@ -54,3 +67,4 @@ int Net_ReadLoopbackPacket(net_source_t source, void* data, size_t size, net_add
 net_address_t Net_LocalAddress(uint16_t port);
 net_address_t Net_Address(const char* address, uint16_t port);
 const char* Net_AddressToString(net_address_t address, uint16_t* port);
+bool Net_CompareAddress(net_address_t a, net_address_t b);

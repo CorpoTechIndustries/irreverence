@@ -21,6 +21,8 @@
 #include <engine/edict.h>
 #include <engine/net.h>
 #include <engine/cvar.h>
+#include <engine/client.h>
+#include <engine/server.h>
 
 #include <platform/sys.h>
 #include <platform/lib.h>
@@ -30,6 +32,8 @@
 #include <public/engine.h>
 
 #include <platform/memory.h>
+
+#include <engine/net_messages.h>
 
 #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
 #include <cimgui.h>
@@ -180,30 +184,43 @@ int Engine_Run(int argc, const char** argv)
 	g_ClientExports.pInit();
 	#endif
 
-	LOG_INFO("sv_test = %f", CVar_GetFloat("sv_test"));
-	LOG_INFO("cl_test = %f", CVar_GetFloat("cl_test"));
+	CL_Init(&cl);
+	SV_Init(&sv);
 
-	Net_Setup(false);
+	CVar_SetInt("sv_maxplayers", 1);
 
-	net_address_t local = Net_LocalAddress(27015);
+	SV_Host(&sv);
 
 	while (!glfwWindowShouldClose(window)) {
 		IN_Update();
 
+		CL_Update(&cl);
+		SV_Update(&sv);
+
 		glfwPollEvents();
+
+		if (IN_IsKeyPressed(GLFW_KEY_P)) {
+			CL_Connect(&cl, "localhost", 27015);
+		}
+
+		if (IN_IsKeyPressed(GLFW_KEY_O)) {
+			CL_NetSend(&cl, CLC_NOP, NULL, 0, true);
+		}
+
+		if (IN_IsKeyPressed(GLFW_KEY_I)) {
+			SV_NetSend(&sv, sv.clients + 0, SVC_NOP, NULL, 0, true);
+		}
+
+		if (IN_IsKeyPressed(GLFW_KEY_Q)) {
+			CL_Disconnect(&cl);
+		}
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		igNewFrame();
-		
+
 		if (show_demo) {
 			igShowDemoWindow(&show_demo);
-		}
-
-		if (IN_IsKeyPressed(GLFW_KEY_5)) {
-			int n = 125;
-
-			Net_SendLoopbackPacket(NET_CLIENT, &n, sizeof(n), local);
 		}
 
 		prevTime = curTime;
@@ -213,16 +230,6 @@ int Engine_Run(int argc, const char** argv)
 		if (nextTick < curTime) {
 			Phys_Update();
 			nextTick = curTime + tickRate;
-		}
-
-		for (size_t i = 0; i < EDICT_MAX_COUNT; i++) {
-			edict_t* e = g_pEdicts + i;
-
-			if (e->free) {
-				continue;
-			}
-
-			g_GameExports.pThink(e);
 		}
 
 		R_DebugMoveUpdate();
@@ -235,6 +242,9 @@ int Engine_Run(int argc, const char** argv)
 
 		glfwSwapBuffers(window);
 	}
+
+	CL_Close(&cl);
+	SV_Close(&sv);
 
 	g_GameExports.pGameClose();
 
@@ -358,6 +368,23 @@ static bool setup_game()
 
 #ifndef ENGINE_DEDICATED
 
+static void draw_debug_cube(vec3_t origin, vec3_t size, vec4_t color)
+{
+	mesh_t* cube = R_GetCubeMesh();
+
+	mesh_instancemodel_t in;
+	in.model = MAT4_IDENTITY;
+	in.r = color.x;
+	in.g = color.y;
+	in.b = color.z;
+	in.a = color.w;
+
+	Mat4_Translate(&in.model, origin);
+	Mat4_Scale(&in.model, size);
+
+	Mesh_Draw(cube, &in);
+}
+
 static bool setup_client()
 {
 	client_functions_t funcs;
@@ -370,6 +397,8 @@ static bool setup_client()
 	funcs.pRegisterCVar = CVar_Register;
 	funcs.pGetCVar = CVar_Get;
 
+	funcs.pDebugDrawCube = draw_debug_cube;
+
 #ifdef PLATFORM_LINUX
 	const char* lib_name = "bin/client.so";
 #elif PLATFORM_WINDOWS
@@ -379,6 +408,7 @@ static bool setup_client()
 	g_ClientDLL = Sys_OpenLibrary(lib_name);
 
 	if (!g_ClientDLL) {
+		const char* err = dlerror();
 		LOG_FATAL("client library could not be opened!");
 		return false;
 	}

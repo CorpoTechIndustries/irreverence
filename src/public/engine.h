@@ -30,11 +30,15 @@ typedef struct {
 	void(*pGameInit)();
 	void(*pGameClose)();
 
+	void(*pClientConnect)(edict_t* ent, void* client);
+
 	bool(*pSpawn)(edict_t* ent);
 	void(*pFree)(edict_t* ent);
 	void(*pThink)(edict_t* ent);
 	void(*pUse)(edict_t* user, edict_t* used);
 	void(*pTouch)(edict_t* touched, edict_t* ent);
+
+	void(*pGetEntityClass)(edict_t* edict, char* buffer, size_t maxSize);
 } game_exports_t;
 
 typedef bool(*game_init_fn_t)(engine_functions_t* funcs, game_exports_t* exports, int version);

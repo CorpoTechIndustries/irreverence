@@ -11,3 +11,6 @@
 	path = vendor/cimgui
 	url = https://github.com/cimgui/cimgui.git
 	branch = docking_inter
+[submodule "vendor/enet"]
+	path = vendor/enet
+	url = https://github.com/zpl-c/enet

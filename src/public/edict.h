@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <math/vec3.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,6 +16,8 @@ typedef struct {
 	uint32_t model;
 
 	float nextthink;
+
+	vec3_t origin;
 
 	struct edict_t* entity;
 } entvars_t;

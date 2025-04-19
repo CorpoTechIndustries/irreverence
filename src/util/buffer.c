@@ -28,7 +28,7 @@ void Buffer_Free(buffer_t* buffer)
 
 size_t Buffer_Read(buffer_t* buffer, void* dst, size_t size)
 {
-	if (buffer->pos + size >= buffer->size) {
+	if (buffer->pos + size > buffer->size) {
 		size = (buffer->pos + size) - buffer->size;
 	}
 
@@ -86,9 +86,17 @@ float Buffer_ReadFloat(buffer_t* buffer)
 	return v;
 }
 
+// FIXME: Fix this later on so that strings don't fuck up.
+size_t Buffer_ReadString(buffer_t* buffer, char* buf, size_t maxSize)
+{
+	uint32_t size = Buffer_ReadUInt32(buffer);
+
+	return Buffer_Read(buffer, buf, size);
+}
+
 size_t Buffer_Write(buffer_t* buffer, const void* data, size_t size)
 {
-	if (buffer->pos + size >= buffer->size) {
+	if (buffer->pos + size > buffer->size) {
 		size = (buffer->pos + size) - buffer->size;
 	}
 
@@ -124,4 +132,10 @@ void Buffer_WriteUInt64(buffer_t* buffer, uint64_t value)
 void Buffer_WriteFloat(buffer_t* buffer, float value)
 {
 	Buffer_Write(buffer, &value, sizeof(value));
+}
+
+void Buffer_WriteString(buffer_t* buffer, const char* text, size_t size)
+{
+	Buffer_WriteUInt32(buffer, size);
+	Buffer_Write(buffer, text, size);
 }

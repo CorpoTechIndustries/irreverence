@@ -4,6 +4,13 @@ project(irreverence)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/game/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/game/bin)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+if(WIN32)
+	add_definitions(-DPLATFORM_WINDOWS)
+elseif(UNIX)
+	add_definitions(-DPLATFORM_LINUX)
+endif()
 
 include_directories(src)
 
@@ -13,6 +20,11 @@ option(CGLM_STATIC "Static build" ON)
 add_subdirectory(vendor/cglm)
 
 set(CGLM_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/vendor/cglm/include)
+
+option(ENET_TEST "Build enet tests" OFF)
+add_subdirectory(vendor/enet)
+
+set(ENET_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/vendor/enet/include)
 
 add_subdirectory(vendor/joltc)
 
@@ -30,12 +42,6 @@ if (CMAKE_C_BYTE_ORDER EQUAL BIG_ENDIAN)
 	add_definitions(-DCPU_BIG_ENDIAN)
 else()
 	add_definitions(-DCPU_LITTLE_ENDIAN)
-endif()
-
-if (WIN32)
-	add_definitions(-DPLATFORM_WINDOWS)
-elseif (UNIX)
-	add_definitions(-DPLATFORM_LINUX)
 endif()
 
 if (CMAKE_BUILD_TYPE EQUAL Debug)

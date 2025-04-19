@@ -4,6 +4,9 @@
 #include <stdarg.h>
 #include <stdint.h>
 
+void Sys_IOInit();
+void Sys_IOClose();
+
 void Sys_Print(const char* str);
 void Sys_Printf(const char* fmt, ...);
 void Sys_VPrintf(const char* fmt, va_list args);

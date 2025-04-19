@@ -2,6 +2,9 @@
 #include <engine/engine.h>
 #include <platform/memory.h>
 #include <engine/log.h>
+#include <util/buffer.h>
+#include <engine/server.h>
+#include <engine/net_messages.h>
 
 edict_t* g_pEdicts = NULL;
 
@@ -67,6 +70,19 @@ edict_t* ED_CreateByName(const char* name)
 
 	map_fn(ed);
 
+	char className[512];
+
+	static char data[1024];
+
+	g_GameExports.pGetEntityClass(ed, className, sizeof(className));
+
+	buffer_t buffer = Buffer_FromMemory(data, sizeof(data));
+
+	Buffer_WriteUInt32(&buffer, ed->id);
+	Buffer_WriteString(&buffer, className, strlen(className) + 1);
+
+	SV_NetBroadcast(&sv, SVC_EDICT_CREATE, buffer.data, buffer.pos, true);
+
 	return ed;
 }
 
@@ -100,4 +116,12 @@ void ED_Free(size_t index)
 	g_GameExports.pFree(e);
 
 	e->free = true;
+
+	static char data[64];
+
+	buffer_t buffer = Buffer_FromMemory(data, sizeof(data));
+
+	Buffer_WriteUInt32(&buffer, index);
+
+	SV_NetBroadcast(&sv, SVC_EDICT_DESTROY, buffer.data, buffer.size, true);
 }

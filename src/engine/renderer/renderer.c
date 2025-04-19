@@ -24,6 +24,8 @@
 #include <math.h>
 #include <stdalign.h>
 
+#include <engine/client.h>
+
 static void glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
 {
 	if (type == GL_DEBUG_TYPE_PERFORMANCE) return;
@@ -128,14 +130,14 @@ bool R_Init()
 		.nearZ = 0.2f,
 		.farZ = 500.0f
 	};
-	
+
 	Uniform_Init(&s_UniformCommon, UNIFORM_LOCATION_COMMON, NULL, sizeof(s_CommonData));
 
 	dualquat_t defAnimQuats[255];
 
 	for (uint32_t i = 0; i < 255; i++) {
 		defAnimQuats[i] = DUALQUAT_IDENTITY;
-	}	
+	}
 
 	Uniform_Init(&s_UniformAnimation, UNIFORM_LOCATION_ANIMATIONS, defAnimQuats, sizeof(dualquat_t) * 255);
 
@@ -226,11 +228,11 @@ bool R_Init()
 		1.0f, 1.0f, 1.0f, 1.0f
 	};
 	const uint32_t rectIndices[] = { 2, 1, 0, 2, 3, 1 };
-	const mesh_attribute_t rectVertAttribs[] = { 
+	const mesh_attribute_t rectVertAttribs[] = {
 		{ .type = GL_FLOAT, .count = 2 }, 	// Pos
 		{ .type = GL_FLOAT, .count = 2 } 	// UV
 	};
-	const mesh_attribute_t rectInstAttribs[] = { 
+	const mesh_attribute_t rectInstAttribs[] = {
 		{ .type = GL_FLOAT, .count = 4 }, 	// Color
 		{ .type = GL_FLOAT, .count = 2 }, 	// Pos
 		{ .type = GL_FLOAT, .count = 2 } 	// Size
@@ -331,8 +333,8 @@ static void RenderDepth() { }
 
 static void RenderShadows() { }
 
-static void RenderOpaque() 
-{ 
+static void RenderOpaque()
+{
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glDepthMask(GL_TRUE);
@@ -399,25 +401,25 @@ static void RenderTransparent()
 		.model = MAT4_IDENTITY
 	};
 	Mat4_Translate(&inst2data.model, NEW_VEC3(0.0f, 0.0f, -2.0f));
-	
+
 	Mesh_Draw(R_GetCubeMesh(), &inst1data);
 	Mesh_Draw(R_GetCubeMesh(), &inst2data);
 }
 
 static void RenderDecals() { }
 
-static void RenderOverlay() 
-{ 
+static void RenderOverlay()
+{
 	const struct {
 		float r, g, b, a;
 		vec2_t pos;
 		vec2_t size;
-	} scrRectData = { 
-		.r = 1.0f, 
-		.g = 1.0f, 
-		.b = 1.0f, 
-		.a = 1.0f, 
-		.pos = NEW_VEC2(0.0f, 0.0f), 
+	} scrRectData = {
+		.r = 1.0f,
+		.g = 1.0f,
+		.b = 1.0f,
+		.a = 1.0f,
+		.pos = NEW_VEC2(0.0f, 0.0f),
 		.size = NEW_VEC2(s_CommonData.width, s_CommonData.height) };
 
 	glDepthFunc(GL_ALWAYS);
@@ -460,12 +462,14 @@ void R_Present()
 
 	if (!g_ClientExports.pRenderPreDepth()) RenderDepth();
 	g_ClientExports.pRenderPostDepth();
-	
+
 	if (!g_ClientExports.pRenderPreShadows()) RenderShadows();
 	g_ClientExports.pRenderPostShadows();
 
 	if (!g_ClientExports.pRenderPreOpaque()) RenderOpaque();
 	g_ClientExports.pRenderPostOpaque();
+
+	CL_Render(&cl);
 
 	if (!g_ClientExports.pRenderPreTransparent()) RenderTransparent();
 	g_ClientExports.pRenderPostTransparent();

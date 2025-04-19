@@ -6,10 +6,13 @@
                 "${workspaceFolder}/src/**",
                 "${workspaceFolder}/vendor/cglm/include",
                 "${workspaceFolder}/vendor/joltc/include",
-                "${workspaceFolder}/vendor/stb"
+                "${workspaceFolder}/vendor/stb",
+				"${workspaceFolder}/vendor/enet/include"
             ],
             "defines": [
                 "__USE_MISC",
+				"__USE_POSIX",
+				"__USE_GNU",
                 "PLATFORM_LINUX",
                 "ENGINE_DEDICATED"
             ],
@@ -26,10 +29,13 @@
                 "${workspaceFolder}/vendor/cglm/include",
                 "${workspaceFolder}/vendor/joltc/include",
                 "${workspaceFolder}/vendor/stb",
-                "${workspaceFolder}/vendor/cimgui"
+                "${workspaceFolder}/vendor/cimgui",
+				"${workspaceFolder}/vendor/enet/include"
             ],
             "defines": [
                 "__USE_MISC",
+				"__USE_POSIX",
+				"__USE_GNU",
                 "PLATFORM_LINUX",
                 "CIMGUI_USE_OPENGL3",
                 "CIMGUI_USE_GLFW"
