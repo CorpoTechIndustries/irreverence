@@ -23,7 +23,7 @@ bool Shader_InitComputeFromMemory(shader_t* shader, const char* code);
 void Shader_Destroy(shader_t* shader);
 
 void Shader_Bind(shader_t* shader);
-void Shader_Dispatch(shader_t* shader, vec3_t groups, gapi_enum_t memory_barrier);
+void Shader_Dispatch(shader_t* shader, ivec3_t groups, gapi_enum_t memory_barrier);
 
 uint8_t Shader_GetLocation(shader_t* shader, const char* name);
 

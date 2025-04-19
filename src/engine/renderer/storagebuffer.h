@@ -5,10 +5,11 @@
 #include <stddef.h>
 
 typedef struct {
+	size_t currentSize;
+	void* map;
 	uint32_t id;
 	bool realloc;
 	uint8_t location;
-	size_t currentSize;
 } storagebuffer_t;
 
 bool Storagebuffer_Init(storagebuffer_t* storagebuffer, uint8_t location, void* data, size_t size, bool realloc);

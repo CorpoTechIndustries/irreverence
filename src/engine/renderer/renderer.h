@@ -1,16 +1,19 @@
 #pragma once
 
-#include <engine/renderer/mesh.h>
-#include <engine/renderer/animation.h>
-#include <engine/renderer/material.h>
 #include <math/vec2.h>
 #include <math/vec3.h>
+#include <math/vec4.h>
 
 #include <stdbool.h>
-
-typedef struct texture texture_t;
+#include <stdint.h>
 
 typedef uint32_t gapi_enum_t;
+
+typedef struct texture texture_t;
+typedef struct material material_t;
+typedef struct animator animator_t;
+typedef struct mesh mesh_t;
+typedef struct font font_t;
 
 typedef enum {
 	UNIFORM_LOCATION_COMMON,
@@ -34,9 +37,12 @@ void R_Destroy();
 void R_WindowUpdate(int width, int height);
 void R_DebugMoveUpdate();
 
+void R_UpdateAnimationBuffer(animator_t* animator);
+
 void R_Present();
 
-void R_UpdateAnimationBuffer(animator_t* animator);
+void R_DrawRect(vec2_t position, vec2_t size, vec4_t color);
+void R_DrawText(font_t* font, vec2_t position, float scale, vec4_t color, const char* text);
 
 ivec2_t R_GetWindowSize();
 

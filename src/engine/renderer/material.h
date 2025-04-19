@@ -20,7 +20,7 @@ typedef enum {
 	MATERIAL_FLAG_TEXTUREARRAY, 	// Does it use an texture array? This automatically gets set in Init
 } material_flags_t;
 
-typedef struct {
+typedef struct material {
 	uint32_t id;
 	uint32_t flags;
 	union {

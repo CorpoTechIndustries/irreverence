@@ -196,7 +196,7 @@ void Shader_Bind(shader_t* shader)
 	glUseProgram(shader->id);
 }
 
-void Shader_Dispatch(shader_t* shader, vec3_t groups, gapi_enum_t memory_barrier)
+void Shader_Dispatch(shader_t* shader, ivec3_t groups, gapi_enum_t memory_barrier)
 {
 	glDispatchCompute(groups.x, groups.y, groups.z);
 	

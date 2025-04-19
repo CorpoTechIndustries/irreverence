@@ -54,7 +54,7 @@ typedef struct {
 	} bones;
 } animation_t; // Will be stored on model_t
 
-typedef struct {
+typedef struct animator {
 	animation_t* animation;
 	dualquat_t* boneQuats;
 	vec3_t* boneOffsetPositions;

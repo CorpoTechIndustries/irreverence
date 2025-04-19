@@ -199,7 +199,8 @@ void Light_RemoveSpotlight(uint32_t id)
 		.color = NEW_VEC3S(0.0f),
 		.brightness = 0.0f,
 		.cutoff = 0.0f,
-		.outerCutoff = 0.0f
+		.outerCutoff = 0.0f,
+		.radius = 0.0f
 	};
 
 	Uniform_Update(&s_SpotlightUniform, &emptylight, sizeof(spotlight_data_t), sizeof(spotlight_data_t) * id);
@@ -268,5 +269,16 @@ void Light_SetSLightBrightness(uint32_t id, float brightness)
 	if (!light->ready) return;
 
 	light->data.brightness = brightness;
+	light->outdated = true;
+}
+
+void Light_SetSLightradius(uint32_t id, float radius)
+{
+	if (id >= MAX_SPOTLIGHTS) return;
+
+	spotlight_t* light = &s_pSpotlights[id];
+	if (!light->ready) return;
+
+	light->data.radius = radius;
 	light->outdated = true;
 }

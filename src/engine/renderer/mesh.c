@@ -89,9 +89,6 @@ bool Mesh_InitCustom(
 	mesh->ebo = 0; 
 	mesh->ibo = 0;
 
-	if (vert_attrib_count == 0) {
-		// TODO: Assert
-	}	
 	glCreateVertexArrays(1, &mesh->id);
 	
 	if (indices && index_count > 0) {
@@ -166,10 +163,7 @@ bool Mesh_InitCustom(
 	}
 
 	if (inst_attribs && inst_attrib_count > 0) {
-		glDisable(GL_DEBUG_OUTPUT);
 		glCreateBuffers(1, &mesh->ibo);
-		glNamedBufferStorage(mesh->ibo, 0, NULL, GL_DYNAMIC_STORAGE_BIT);
-		glEnable(GL_DEBUG_OUTPUT);
 
 		size_t instAttTotalSize = 0;
 		size_t* instAttSizes = Sys_Malloc(sizeof(size_t) * inst_attrib_count); 
@@ -254,10 +248,7 @@ bool Mesh_InitModel(mesh_t* mesh, const mesh_vertexmodel_t* vertices, uint32_t v
 	glCreateBuffers(1, &mesh->vbo);
 	glNamedBufferStorage(mesh->vbo, vertexSize, vertices, GL_DYNAMIC_STORAGE_BIT);
 
-	glDisable(GL_DEBUG_OUTPUT);
 	glCreateBuffers(1, &mesh->ibo);
-	glNamedBufferStorage(mesh->ibo, 0, NULL, GL_DYNAMIC_STORAGE_BIT);
-	glEnable(GL_DEBUG_OUTPUT);
 
 	glCreateBuffers(1, &mesh->ebo);
 	glNamedBufferStorage(mesh->ebo, indexSize, indices, GL_DYNAMIC_STORAGE_BIT);
@@ -320,10 +311,7 @@ bool Mesh_InitAnimated(mesh_t* mesh, const mesh_vertexanimated_t* vertices, uint
 	glCreateBuffers(1, &mesh->vbo);
 	glNamedBufferStorage(mesh->vbo, vertexSize, vertices, GL_DYNAMIC_STORAGE_BIT);
 
-	glDisable(GL_DEBUG_OUTPUT);
 	glCreateBuffers(1, &mesh->ibo);
-	glNamedBufferStorage(mesh->ibo, 0, NULL, GL_DYNAMIC_STORAGE_BIT);
-	glEnable(GL_DEBUG_OUTPUT);
 
 	glCreateBuffers(1, &mesh->ebo);
 	glNamedBufferStorage(mesh->ebo, indexSize, indices, GL_DYNAMIC_STORAGE_BIT);
@@ -428,11 +416,7 @@ void Mesh_AddInstance(mesh_t* mesh, const void* data, material_t* material)
 		instlist->array = Sys_ReAlloc(instlist->array, instlist->capacity * mesh->instStride);
 	}
 
-	uint8_t* data_c = (uint8_t*)data;
-	uint8_t* instance_c = instlist->array + instlist->count * mesh->instStride;
-	for (uint32_t i = 0; i < mesh->instStride; i++) {
-		instance_c[i] = data_c[i];
-	}
+	Sys_MemCpy(data, instlist->array + instlist->count * mesh->instStride, mesh->instStride);
 
 	instlist->count++;
 }
@@ -448,11 +432,10 @@ void Mesh_Draw(mesh_t* mesh, const void* data)
 {
 	glNamedBufferData(mesh->ibo, mesh->instStride, data, GL_DYNAMIC_DRAW);
 
+	glBindVertexArray(mesh->id);
 	if (mesh->ebo > 0) {
-		glBindVertexArray(mesh->id);
 		glDrawElements(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, 0);
 	} else {
-		glBindVertexArray(mesh->id);
 		glDrawArrays(GL_TRIANGLES, 0, mesh->vertexCount);
 	}
 }
@@ -464,11 +447,10 @@ void Mesh_DrawInstances(mesh_t* mesh, material_t* material)
 
 	glNamedBufferData(mesh->ibo, mesh->instStride * instlist->count, instlist->array, GL_DYNAMIC_DRAW);
 
+	glBindVertexArray(mesh->id);
 	if (mesh->ebo > 0) {
-		glBindVertexArray(mesh->id);
 		glDrawElementsInstanced(GL_TRIANGLES, mesh->indexCount, GL_UNSIGNED_INT, NULL, instlist->count);
 	} else {
-		glBindVertexArray(mesh->id);
 		glDrawArraysInstanced(GL_TRIANGLES, 0, mesh->vertexCount, instlist->count);
 	}
 }

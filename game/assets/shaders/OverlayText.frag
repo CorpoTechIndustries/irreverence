@@ -1,6 +1,6 @@
 #version 460
 
-layout(location = 0) out vec3 fColor;
+out vec4 FRAG_COLOR;
 
 layout(std140, binding = 0) uniform CommonUniform
 {
@@ -14,7 +14,7 @@ layout(std140, binding = 0) uniform CommonUniform
 	float Far;
 } uCommon;
 
-layout(binding = 0) uniform sampler2D uTexScreen;
+layout(binding = 0) uniform sampler2D uTex;
 
 in VP_Shared {
     vec2 pUV;
@@ -23,8 +23,5 @@ in VP_Shared {
 
 void main()
 {
-	float whitePoint = 1.0;
-	float blackPoint = 0.99;
-
-	fColor = texture(uTexScreen, pUV).rgb * whitePoint - (blackPoint * whitePoint), 1.0;
+	FRAG_COLOR = pInstanceColor * vec4(texture(uTex, pUV).r);
 }

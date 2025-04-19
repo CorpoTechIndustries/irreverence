@@ -39,7 +39,7 @@ typedef struct {
 	mat4_t model;		// Model Matrix
 } mesh_instancemodel_t;
 
-typedef struct {
+typedef struct mesh {
 	uint32_t id;
 	uint32_t vbo;
 	uint32_t ibo;

@@ -3,6 +3,8 @@
 
 #include "cbase.h"
 
+#include <cmath>
+
 MAKE_CVAR_FLOAT(cl_test, 1.5f);
 
 class C_Foo : public C_BaseEntity
@@ -22,7 +24,7 @@ public:
 		}
 
 		vec3_t size = { 1.0f, 1.0f, 1.0f };
-		vec4_t color = { 1.0f, m_fCur, 0.0f, 1.0f };
+		vec4_t color = { (5.0f + cosf(m_fCur * 5.0f)) * 2.0f, (5.0f + sinf(m_fCur * 5.0f)) * 2.0f, 5.0f, 1.0f };
 		DRAW_DEBUG_CUBE(m_pVars->origin, size, color);
 	}
 

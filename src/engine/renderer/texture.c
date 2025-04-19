@@ -46,9 +46,15 @@ bool Texture_InitFromMemory(texture_t* texture, const uint8_t* data, uint32_t wi
 	if (channel_count == 4)  {
 		glFormat = GL_RGBA8;
 		glFormatAlt = GL_RGBA;
-	} else {
+	} else if (channel_count == 3) {
 		glFormat = GL_RGB8;
 		glFormatAlt = GL_RGB;
+	} else if (channel_count == 2) {
+		glFormat = GL_RG8;
+		glFormatAlt = GL_RG;
+	} else if (channel_count == 1) {
+		glFormat = GL_R8;
+		glFormatAlt = GL_RED;
 	}
 
 	if (gen_mipmaps && data) {
@@ -98,7 +104,7 @@ bool Texture_InitColorAttachment(
 		glCreateTextures(GL_TEXTURE_2D, 1, &texture->id);
 		glTextureParameteri(texture->id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(texture->id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTextureParameteri(texture->id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(texture->id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTextureParameteri(texture->id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		
 		texture->mipCount = (max_mips > 1) ? (uint8_t)(1 + floorf(log2f(MATH_MAX(width, height)))) : 1;

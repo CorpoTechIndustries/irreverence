@@ -1,6 +1,6 @@
 #version 460
 
-layout(location = 1) out vec3 fColor;
+layout(location = 0) out vec3 fColor;
 
 layout(std140, binding = 0) uniform CommonUniform
 {
@@ -27,19 +27,19 @@ in VP_Shared {
 void main()
 {
     float x = uFilterRadius;
-    float y = uFilterRadius * (1280.0 / 720.0);
+    float y = uFilterRadius * ((uCommon.Width >> uTexLevel) / (uCommon.Height >> uTexLevel));
 
-	vec3 a = textureLod(uTex, vec2(pUV.x - x, pUV.y + y), 0).rgb;
-    vec3 b = textureLod(uTex, vec2(pUV.x, pUV.y + y), 0).rgb;
-    vec3 c = textureLod(uTex, vec2(pUV.x + x, pUV.y + y), 0).rgb;
+	vec3 a = textureLod(uTex, vec2(pUV.x - x, pUV.y + y), uTexLevel).rgb;
+    vec3 b = textureLod(uTex, vec2(pUV.x, pUV.y + y), uTexLevel).rgb;
+    vec3 c = textureLod(uTex, vec2(pUV.x + x, pUV.y + y), uTexLevel).rgb;
 
-    vec3 d = textureLod(uTex, vec2(pUV.x - x, pUV.y), 0).rgb;
-    vec3 e = textureLod(uTex, vec2(pUV.x, pUV.y), 0).rgb;
-    vec3 f = textureLod(uTex, vec2(pUV.x + x, pUV.y), 0).rgb;
+    vec3 d = textureLod(uTex, vec2(pUV.x - x, pUV.y), uTexLevel).rgb;
+    vec3 e = textureLod(uTex, pUV, uTexLevel).rgb;
+    vec3 f = textureLod(uTex, vec2(pUV.x + x, pUV.y), uTexLevel).rgb;
 
-    vec3 g = textureLod(uTex, vec2(pUV.x - x, pUV.y - y), 0).rgb;
-    vec3 h = textureLod(uTex, vec2(pUV.x, pUV.y - y), 0).rgb;
-    vec3 i = textureLod(uTex, vec2(pUV.x + x, pUV.y - y), 0).rgb;
+    vec3 g = textureLod(uTex, vec2(pUV.x - x, pUV.y - y), uTexLevel).rgb;
+    vec3 h = textureLod(uTex, vec2(pUV.x, pUV.y - y), uTexLevel).rgb;
+    vec3 i = textureLod(uTex, vec2(pUV.x + x, pUV.y - y), uTexLevel).rgb;
 
     fColor = e * 4.0;
     fColor += (b + d + f + h) * 2.0;

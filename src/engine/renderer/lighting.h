@@ -22,6 +22,8 @@ typedef struct {
 	float outerCutoff;
 	vec3_t color;
 	float brightness;
+	vec3_t padding;
+	float radius;
 } spotlight_data_t;
 
 void Light_Init();
@@ -46,3 +48,4 @@ void Light_SetSLightDirection(uint32_t id, vec3_t direction);
 void Light_SetSLightOuterCutoff(uint32_t id, float outer_cutoff);
 void Light_SetSLightColor(uint32_t id, vec3_t color);
 void Light_SetSLightBrightness(uint32_t id, float brightness);
+void Light_SetSLightradius(uint32_t id, float radius);

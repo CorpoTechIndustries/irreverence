@@ -15,6 +15,7 @@
 #include <engine/renderer/animation.h>
 #include <engine/renderer/texture.h>
 #include <engine/renderer/framebuffer.h>
+#include <engine/renderer/font.h>
 #include <engine/physics.h>
 #include <engine/log.h>
 #include <engine/input.h>
@@ -44,7 +45,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	if (action == GLFW_REPEAT) {
 		return;
 	}
-
+	
 	IN_KeyEvent(key, action == GLFW_PRESS);
 }
 
@@ -174,6 +175,23 @@ int Engine_Run(int argc, const char** argv)
 
 	IN_Init();
 
+	font_t testFont;
+	Font_Init(&testFont, "assets/fonts/DroidSans.ttf");
+
+	texture_t testTex;
+	Texture_Init(&testTex, "nigga.png", true, false);
+
+	spotlight_data_t lightData = {
+		.brightness = 2.0f,
+		.color = NEW_VEC3(0.8f, 0.9f, 1.0f),
+		.position = NEW_VEC3(0.0f, 10.0f, 5.0f),
+		.radius = 100.0f,
+		.cutoff = 15.0f,
+		.outerCutoff = 35.0f,
+		.direction = NEW_VEC3(0.0f, -1.0f, -0.75f)
+	};
+	Light_AddSpotlight(&lightData);
+
 	float hi = 0.5f;
 	float nextTick = 0.0f;
 	float tickRate = 1.0f/60.0f;
@@ -235,6 +253,11 @@ int Engine_Run(int argc, const char** argv)
 		R_DebugMoveUpdate();
 
 		R_Present();
+
+		char huh[64] = { '\0' };
+		sprintf(huh, "Curtime:\n%0.2f", curTime);
+		Texture_BindRaster(&testTex, 0);
+		R_DrawText(&testFont, NEW_VEC2(10.0f, 64.0f), 0.8f, NEW_VEC4(1.0f, 1.0f, 1.0f, 1.0f), huh);
 
 		igRender();
 
@@ -408,7 +431,6 @@ static bool setup_client()
 	g_ClientDLL = Sys_OpenLibrary(lib_name);
 
 	if (!g_ClientDLL) {
-		const char* err = dlerror();
 		LOG_FATAL("client library could not be opened!");
 		return false;
 	}

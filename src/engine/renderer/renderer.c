@@ -6,6 +6,11 @@
 #include <engine/renderer/shader.h>
 #include <engine/renderer/framebuffer.h>
 #include <engine/renderer/storagebuffer.h>
+#include <engine/renderer/mesh.h>
+#include <engine/renderer/animation.h>
+#include <engine/renderer/material.h>
+#include <engine/renderer/batch.h>
+#include <engine/renderer/font.h>
 #include <engine/log.h>
 #include <engine/input.h>
 #include <engine/engine.h>
@@ -90,9 +95,10 @@ static shader_t s_ShaderOpaqueMdl;
 static shader_t s_ShaderTranspMdl;
 static shader_t s_ShaderOverlayTransp;
 static shader_t s_ShaderOverlayScreen;
-static shader_t s_ShaderOverlayLevels;
 static shader_t s_ShaderOverlayBloomDS;
 static shader_t s_ShaderOverlayBloomUS;
+static shader_t s_ShaderOverlayText;
+static shader_t s_ShaderOverlayPrimitive;
 
 static texture_t s_TextureMissing;
 static texture_t s_TextureWhite;
@@ -102,6 +108,7 @@ static material_t s_MaterialWhite;
 
 static mesh_t s_MeshCube;
 static mesh_t s_MeshRect;
+static mesh_t s_MeshText;
 
 bool R_Init()
 {
@@ -134,7 +141,7 @@ bool R_Init()
 	Uniform_Init(&s_UniformCommon, UNIFORM_LOCATION_COMMON, NULL, sizeof(s_CommonData));
 
 	dualquat_t defAnimQuats[255];
-
+	
 	for (uint32_t i = 0; i < 255; i++) {
 		defAnimQuats[i] = DUALQUAT_IDENTITY;
 	}
@@ -144,27 +151,27 @@ bool R_Init()
 	Light_Init();
 
 	framebuffer_attachment_t mainFBAttachments[] = {
-		{ .format = GL_RGB16F, .type = GL_FLOAT, .maxMips = 1 }, 	// Main Color
-		{ .format = GL_RGBA16F, .type = GL_FLOAT, .maxMips = 1 }, 	// Accum Color
-		{ .format = GL_R16F, .type = GL_FLOAT, .maxMips = 1 } 			// Reveal
+		{ .format = GL_RGB16F, .type = GL_HALF_FLOAT, .maxMips = 1 }, 	// Main Color
+		{ .format = GL_RGBA16F, .type = GL_HALF_FLOAT, .maxMips = 1 }, 	// Accum Color
+		{ .format = GL_R16F, .type = GL_FLOAT, .maxMips = 1 } 		// Reveal
 	};
 	framebuffer_attachment_t mainFBDepth = { .format = GL_DEPTH_COMPONENT24, .type = GL_FLOAT };
 
 	Framebuffer_Init(&s_FBMain, 1280, 720, 0, mainFBAttachments, 3, &mainFBDepth);
 
 	framebuffer_attachment_t bloomFBAttachments[] = {
-		{ .format = GL_RGB16F, .type = GL_FLOAT, .maxMips = 8 }, 	// Downscale
-		{ .format = GL_RGB16F, .type = GL_FLOAT, .maxMips = 8 }		// Upscale
+		{ .format = GL_RGB16F, .type = GL_HALF_FLOAT, .maxMips = 8 } 	// Downscale
 	};
-	Framebuffer_Init(&s_FBBloom, 1280, 720, 0, bloomFBAttachments, 2, NULL);
+	Framebuffer_Init(&s_FBBloom, 1280, 720, 0, bloomFBAttachments, 1, NULL);
 
 	Shader_InitRaster(&s_ShaderOpaqueMdl, "ENGINE_OPAQUE_MODEL", "assets/shaders/OpaqueModel.vert", "assets/shaders/OpaqueModel.frag");
 	Shader_InitRaster(&s_ShaderTranspMdl, "ENGINE_TRANSP_MODEL", "assets/shaders/OpaqueModel.vert", "assets/shaders/TranspModel.frag");
 	Shader_InitRaster(&s_ShaderOverlayTransp, "ENGINE_OVERLAY_TRANSP", "assets/shaders/OverlayScreen.vert", "assets/shaders/OverlayTransp.frag");
 	Shader_InitRaster(&s_ShaderOverlayScreen, "ENGINE_OVERLAY_SCREEN", "assets/shaders/OverlayScreen.vert", "assets/shaders/OverlayScreen.frag");
-	Shader_InitRaster(&s_ShaderOverlayLevels, "ENGINE_OVERLAY_LEVEL", "assets/shaders/OverlayScreen.vert", "assets/shaders/OverlayLevels.frag");
 	Shader_InitRaster(&s_ShaderOverlayBloomDS, "ENGINE_OVERLAY_BLOOMDS", "assets/shaders/OverlayScreen.vert", "assets/shaders/OverlayBloomDS.frag");
 	Shader_InitRaster(&s_ShaderOverlayBloomUS, "ENGINE_OVERLAY_BLOOMUS", "assets/shaders/OverlayScreen.vert", "assets/shaders/OverlayBloomUS.frag");
+	Shader_InitRaster(&s_ShaderOverlayText, "ENGINE_OVERLAY_TEXT", "assets/shaders/OverlayText.vert", "assets/shaders/OverlayText.frag");
+	Shader_InitRaster(&s_ShaderOverlayPrimitive, "ENGINE_OVERLAY_PRIMITIVE", "assets/shaders/OverlayPrimitive.vert", "assets/shaders/OverlayPrimitive.frag");
 
 	struct UCRGB {
 		uint8_t r, g, b;
@@ -220,7 +227,7 @@ bool R_Init()
 	};
 	const uint32_t cubeIndices[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 0, 18, 1, 3, 19, 4, 6, 20, 7, 9, 21, 10, 12, 22, 13, 15, 23, 16 };
 	Mesh_InitModel(&s_MeshCube, cubeVertices, 24, cubeIndices, 36);
-
+	
 	const float rectVertices[] = {
 		0.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, 1.0f, 0.0f, 1.0f,
@@ -238,6 +245,18 @@ bool R_Init()
 		{ .type = GL_FLOAT, .count = 2 } 	// Size
 	};
 	Mesh_InitCustom(&s_MeshRect, rectVertices, sizeof(rectVertices), rectIndices, 6, rectVertAttribs, 2, rectInstAttribs, 3);
+	
+	const mesh_attribute_t textVertAttribs[] = { 
+		{ .type = GL_FLOAT, .count = 2 }, 	// Pos
+		{ .type = GL_FLOAT, .count = 2 } 	// UV
+	};
+	const mesh_attribute_t textInstAttribs[] = { 
+		{ .type = GL_FLOAT, .count = 4 }, 	// Color
+		{ .type = GL_FLOAT, .count = 2 }, 	// Pos
+		{ .type = GL_FLOAT, .count = 2 }, 	// Size
+		{ .type = GL_FLOAT, .count = 4 } 	// UVs
+	};
+	Mesh_InitCustom(&s_MeshText, rectVertices, sizeof(rectVertices), rectIndices, 6, textVertAttribs, 2, textInstAttribs, 4);
 
 	return true;
 }
@@ -255,9 +274,10 @@ void R_Destroy()
 	Shader_Destroy(&s_ShaderTranspMdl);
 	Shader_Destroy(&s_ShaderOverlayTransp);
 	Shader_Destroy(&s_ShaderOverlayScreen);
-	Shader_Destroy(&s_ShaderOverlayLevels);
 	Shader_Destroy(&s_ShaderOverlayBloomDS);
 	Shader_Destroy(&s_ShaderOverlayBloomUS);
+	Shader_Destroy(&s_ShaderOverlayText);
+	Shader_Destroy(&s_ShaderOverlayPrimitive);
 
 	Texture_Destroy(&s_TextureMissing);
 	Texture_Destroy(&s_TextureWhite);
@@ -267,6 +287,7 @@ void R_Destroy()
 
 	Mesh_Destroy(&s_MeshCube);
 	Mesh_Destroy(&s_MeshRect);
+	Mesh_Destroy(&s_MeshText);
 }
 
 void R_WindowUpdate(int width, int height)
@@ -348,13 +369,14 @@ static void RenderOpaque()
 	Texture_BindRaster(R_GetWhiteTexture(), 0);
 
 	mesh_instancemodel_t instdata1 = {
-		.r = 1.0f,
-		.g = 0.0f,
-		.b = 0.0f,
+		.r = 10.0f,
+		.g = 2.0f,
+		.b = 2.0f,
 		.a = 1.0f,
 		.model = MAT4_IDENTITY
 	};
-	Mat4_Translate(&instdata1.model, NEW_VEC3(0.0f, 0.0f, -6.0f));
+	Mat4_Translate(&instdata1.model, NEW_VEC3(0.0f, 0.0f, -8.0f));
+	Mat4_Scale(&instdata1.model, NEW_VEC3(1.0f, 1.0f, 1.0f));
 
 	mesh_instancemodel_t instdata2 = {
 		.r = 0.8f,
@@ -425,25 +447,80 @@ static void RenderOverlay()
 	glDepthFunc(GL_ALWAYS);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_DEPTH_TEST);
 
+	glDepthMask(GL_FALSE);
 	Framebuffer_Bind(&s_FBMain);
 
 	Shader_Bind(&s_ShaderOverlayTransp);
 	Texture_BindRaster(&s_FBMain.colorTextures[1], 0);
 	Texture_BindRaster(&s_FBMain.colorTextures[2], 1);
-	Mesh_Draw(&s_MeshRect, &scrRectData); // TODO: Actually use Compute Shaders for this
+	Mesh_Draw(&s_MeshRect, &scrRectData);
 
-	glDisable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
+	
+	Framebuffer_Bind(&s_FBBloom);
+	Shader_Bind(&s_ShaderOverlayBloomDS);
+	Texture_BindRaster(&s_FBMain.colorTextures[0], 0);
+	
+	Shader_SetUInt(&s_ShaderOverlayBloomDS, 0, 0);
+	Shader_SetVec2(&s_ShaderOverlayBloomDS, 1, NEW_VEC2(1.0f / (float)s_FBBloom.width, 1.0f / (float)s_FBBloom.height));
+	
+	for (uint8_t i = 0; i < s_FBBloom.colorTextures[0].mipCount; i++) {
+		uint32_t width = s_FBBloom.width >> i, height = s_FBBloom.height >> i;
+		glViewport(0, 0, width, height);
+		
+		Framebuffer_RelinkAttachment(&s_FBBloom, 0, i);
+		
+		Mesh_Draw(&s_MeshRect, &scrRectData);
+		
+		Shader_SetVec2(&s_ShaderOverlayBloomDS, 1, NEW_VEC2(1.0f / (float)width, 1.0f / (float)height));
+		Shader_SetUInt(&s_ShaderOverlayBloomDS, 0, i);
+		Texture_BindRaster(&s_FBBloom.colorTextures[0], 0);
+	}
+	Framebuffer_RelinkAttachment(&s_FBBloom, 0, 0);
+	
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+	glBlendEquation(GL_FUNC_ADD);
+
+	Shader_Bind(&s_ShaderOverlayBloomUS);
+	Shader_SetUInt(&s_ShaderOverlayBloomUS, 0, 0);
+	Shader_SetFloat(&s_ShaderOverlayBloomUS, 1, 0.003f);
+
+	for (uint8_t i = s_FBBloom.colorTextures[0].mipCount - 1; i > 0; i--) {
+		uint8_t iNext = i - 1;
+		uint32_t width = s_FBBloom.width >> iNext, height = s_FBBloom.height >> iNext;
+		
+		Texture_BindRaster(&s_FBBloom.colorTextures[0], 0);
+		Shader_SetUInt(&s_ShaderOverlayBloomUS, 0, i);
+
+		glViewport(0, 0, width, height);
+		Framebuffer_RelinkAttachment(&s_FBBloom, 0, iNext);
+
+		Mesh_Draw(&s_MeshRect, &scrRectData);
+	}
+	Framebuffer_RelinkAttachment(&s_FBBloom, 0, 0);
+
 	glDisable(GL_BLEND);
 
-	Framebuffer_UnBind();
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	Framebuffer_UnBind();	
 
 	Shader_Bind(&s_ShaderOverlayScreen);
 	Texture_BindRaster(&s_FBMain.colorTextures[0], 0);
+	Texture_BindRaster(&s_FBBloom.colorTextures[0], 1);
 	Mesh_Draw(&s_MeshRect, &scrRectData);
+	
+	glEnable(GL_BLEND);
+	glBlendEquation(GL_FUNC_ADD);
+	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+	Shader_Bind(&s_ShaderOverlayText);
+}
+
+void R_UpdateAnimationBuffer(animator_t* animator)
+{
+	Uniform_Update(&s_UniformAnimation, animator->boneQuats, sizeof(dualquat_t) * animator->boneCount, 0);
 }
 
 void R_Present()
@@ -484,9 +561,54 @@ void R_Present()
 	g_ClientExports.pRenderPostOverlay();
 }
 
-void R_UpdateAnimationBuffer(animator_t* animator)
+void R_DrawRect(vec2_t position, vec2_t size, vec4_t color)
 {
-	Uniform_Update(&s_UniformAnimation, animator->boneQuats, sizeof(dualquat_t) * animator->boneCount, 0);
+	// TODO: Implement.
+}
+
+void R_DrawText(font_t* font, vec2_t position, float scale, vec4_t color, const char* text)
+{
+	uint32_t fontEnd = FONT_FIRST_CHAR + FONT_CHARS;
+
+	uint32_t len = strlen(text);
+
+	float xOffset = 0.0f;
+	float yOffset = 0.0f;
+
+	struct {
+		vec4_t color;
+		vec2_t pos;
+		vec2_t size;
+		vec4_t uvs;
+	} textInstance = { 
+		.color = color, 
+		.pos = NEW_VEC2(0.0f, 0.0f), 
+		.size = NEW_VEC2(s_CommonData.width, s_CommonData.height),
+		.uvs = NEW_VEC4(0.0f, 0.0f, 1.0f, 1.0f)
+	};
+
+	for (uint32_t i = 0; i < len; i++) {
+		char c = text[i];
+
+		if (c == '\n') {
+			xOffset = 0.0f;
+			yOffset -= 64.0f * scale;
+		} 
+
+		if(c < FONT_FIRST_CHAR || c > fontEnd) {
+			continue;
+		}
+
+		struct glyph* cGlyph = &font->glyphs[c - FONT_FIRST_CHAR];
+
+		textInstance.size = Vec2_Muls(cGlyph->size, scale);
+		textInstance.pos = NEW_VEC2(position.x + (cGlyph->off.x + xOffset) * scale, position.y - (cGlyph->off.y + cGlyph->size.y - yOffset) * scale);
+		textInstance.uvs = NEW_VEC4(cGlyph->uvs[0].x, cGlyph->uvs[0].y, cGlyph->uvs[1].x, cGlyph->uvs[1].y);
+
+		Mesh_Draw(&s_MeshText, &textInstance);
+
+		xOffset += cGlyph->advance;
+	}
 }
 
 ivec2_t R_GetWindowSize()

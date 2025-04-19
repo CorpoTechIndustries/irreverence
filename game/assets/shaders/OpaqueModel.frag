@@ -3,10 +3,6 @@
 #define MAX_POINTLIGHTS 512
 #define MAX_SPOTLIGHTS 512
 
-const float LIGHT_CONSTANT = 1.0;
-const float LIGHT_LINEAR = 0.09;
-const float LIGHT_QUADRATIC = 0.032;
-
 layout(location = 0) out vec3 fMainColor;
 
 layout(std140, binding = 0) uniform CommonUniform
@@ -37,6 +33,8 @@ struct Spotlight
 	float outercutoff;
 	vec3 color;
 	float brightness;
+	vec3 padding;
+	float radius;
 };
 
 layout(std140, binding = 1) uniform PointlightUniform
@@ -63,16 +61,21 @@ vec3 CalcPointlights(vec3 fragPos, vec3 normal)
 		}
 
 		vec3 difOriginFrag = light.position - fragPos;
+		float dist = length(difOriginFrag);
+
+		if (dist >= light.radius) {
+			continue;
+		}
+
 		vec3 lightDir = normalize(difOriginFrag);
 
-		// Diffuse Lighting
-		float diff = light.brightness * max(dot(normal, lightDir), 0.0);
+		float hL = dot(normal, lightDir) * 0.5 + 0.5;
+		hL *= hL;
 
-		// Attenuation
-		float dist = length(difOriginFrag);
-		float attenuation = 1.0f / (LIGHT_CONSTANT + LIGHT_LINEAR * dist + LIGHT_QUADRATIC * (dist * dist));
+		float t = dist / light.radius;
+		float falloff = 1.0 - t * t * (3.0 - 2.0 * t);
 
-		result += light.color.rgb * diff * attenuation;
+		result += light.color.rgb * light.brightness * falloff * hL;
 	}
 
 	return result;
@@ -90,17 +93,23 @@ vec3 CalcSpotlights(vec3 fragPos, vec3 normal)
 		}
 
 		vec3 difOriginFrag = light.position - fragPos;
+		float dist = length(difOriginFrag);
+
+		if (dist >= light.radius) {
+			continue;
+		}
+
 		vec3 lightDir = normalize(difOriginFrag);
 
-		// Diffuse Lighting
-		float diff = light.brightness * max(dot(normal, lightDir), 0.0);
+		float intensity = clamp((dot(-lightDir, normalize(light.direction)) - light.outercutoff) / (light.cutoff - light.outercutoff), 0.0, 1.0);
 
-		// Attenuation
-   	 	float intensity = clamp((dot(lightDir, normalize(-light.direction)) - light.outercutoff) / (light.cutoff - light.outercutoff), 0.0, 1.0);
-		float dist = length(difOriginFrag);
-		float attenuation = ( 1.0 / (LIGHT_CONSTANT + LIGHT_LINEAR * dist + LIGHT_QUADRATIC * (dist * dist)) ) * intensity;
+		float hL = dot(normal, lightDir) * 0.5 + 0.5;
+		hL *= hL;
 
-		result += light.color.rgb * diff * attenuation;
+		float t = dist / light.radius;
+		float falloff = 1.0 - t * t * (3.0 - 2.0 * t);
+
+		result += light.color.rgb * light.brightness * falloff * hL * intensity;
 	}
 
 	return result;
@@ -126,6 +135,10 @@ void main()
 
 	vec3 lighting = CalcPointlights(pFragPos, pNormal);
 	lighting += CalcSpotlights(pFragPos, pNormal);
+
+	if (result.r <= 1.0 && result.g <= 1.0 && result.b <= 1.0) {
+		result.rgb *= lighting;	// TODO: Hacky for now, use emissiveness map later
+	}
 
 	fMainColor = result.rgb;
 }
